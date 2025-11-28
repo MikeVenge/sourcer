@@ -1,0 +1,97 @@
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@kakashiii111']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 6926f8b1fcc4aa5cb3018893
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: idle
+Completed after 10 seconds
+
+==================================================
+RESULT:
+==================================================
+## Top Relevant X Posts from the Last 5 Days
+
+Based on the available data from my web search for posts related to 'venture investing, AI, technology, GPU, data centers' from the specified account (@kakashiii111), limited to the last 5 days (from approximately November 21, 2025, onward, based on the current date of November 26, 2025), I found 2 relevant posts. These are the most relevant ones identified, ordered by publication date descending. I have summarized each with the requested details, maintaining the original content as provided in the search results.
+
+### Post 1
+1. **Author's handle**: @kakashiii111 
+2. **Full details of the post**: Posted by: Kakashii. Published: 2025-11-25T07:51:36.000Z. View Count: 14893. Favorite Count: 128. Content: With everyone talking about SPVs and Nvidia, remember that Jensen is a dot-com veteran. And as I wrote below, he learned a lesson or two. In addition to what I wrote below, they outsourced all SPVs to the neoclouds. I call them the "independent SPVs of Nvidia". I will post my. (Includes image or media link: https://t.co/ [not specified in data]). 
+3. **Direct link to the post**: https://x.com/kakashiii111/status/1993226044854141366
+
+### Post 2
+1. **Author's handle**: @kakashiii111 
+2. **Full details of the post**: Posted by: Kakashii. Published: 2025-11-21T21:17:34.000Z. View Count: 5890. Favorite Count: 51. Content: Yesterday, @EdLudlow from Bloomberg interviewed Jensen and asked about China sales, concerns about diversion to China, and the U.S. requirement to monitor any transfer of technology to China through Middle Eastern “approved chips.” Here are Jensen’s quotes on these topics: “The. (Includes image or media link: https://t.co/ySRB9Mf0b4). 
+3. **Direct link to the post**: https://x.com/kakashiii111/status/1991979325210382749
+
+==================================================
+FETCHING 2 X POSTS:
+==================================================
+
+Fetching post 1/2: https://x.com/kakashiii111/status/1993226044854141366
+  ✓ Fetched successfully
+
+Fetching post 2/2: https://x.com/kakashiii111/status/1991979325210382749
+  ✓ Fetched successfully
+
+==================================================
+POST CONTENTS:
+==================================================
+
+──────────────────────────────────────────────────
+Post 1: https://x.com/kakashiii111/status/1993226044854141366
+──────────────────────────────────────────────────
+Author: Kakashii (@kakashiii111)
+
+Content:
+With everyone talking about SPVs and Nvidia, remember that Jensen is a dot-com veteran. And as I wrote below, he learned a lesson or two. In addition to what I wrote below, they outsourced all SPVs to the neoclouds. 
+I call them the "independent SPVs of Nvidia". I will post my article below for you to read.
+
+Stats: 14,901 views | 128 likes | 6 retweets | 7 replies
+Posted: Tue Nov 25 07:51:36 +0000 2025
+
+📎 Quoted Tweet from @kakashiii111:
+   One lesson that the dot-com veterans learned: don’t provide loans to your vendors — “invest” in them. Because once they’re gone, it’s easier to write it off as a failed investment than as a bad loan. ...
+
+──────────────────────────────────────────────────
+Post 2: https://x.com/kakashiii111/status/1991979325210382749
+──────────────────────────────────────────────────
+Author: Kakashii (@kakashiii111)
+
+Content:
+Yesterday, @EdLudlow from Bloomberg interviewed Jensen and asked about China sales, concerns about diversion to China, and the U.S. requirement to monitor any transfer of technology to China through Middle Eastern “approved chips.”
+
+Here are Jensen’s quotes on these topics:
+
+“The most important thing she said (Colette) is that we’ve been saying for some time now: our forecast for China is zero. All of our forecast — the guidance we showed — starts at zero. That’s the most important thing she said.”
+
+“The Chinese market is very large this year. My guess is probably about $50 billion.”
+
+“During the call, the U.S. Commerce Department issued a statement saying:
+‘That element has been around for a long time — it’s to prevent diversion, of course. Over the years, people have speculated about diversion. We’ve chased down every single concern and we’ve repeatedly tested and sampled data centers around the world and found no diversion.’”
+
+Let me address each of Jensen’s statements:
+1. To the public — including investors, institutions, and analysts — Nvidia communicates that its forecast for China sales is zero. And they have a good reason to say that: they want any catalyst related to “approved” sales to China to boost the stock, excite everyone, and create the assumption of an additional tens of billions in potential China revenue.
+But internally? Nvidia has an unofficial, confidential, unwritten policy known only to a handful of executives: chip smuggling must continue, because it represents roughly 15-20% of Nvidia’s GPU sales. Nvidia — and Jensen in particular — is doing everything possible, indirectly and unofficially, to ensure the smuggling pipeline remains active and that demand persists. 
+
+Allowing direct, legal sales to China would not increase Nvidia’s total GPU sales — it would simply convert the smuggling market into a legal one.
+
+2. Jensen’s “guess” of a $50 billion China market is not a guess. Since beginning of the year, Nvidia has already sold around $23 billion worth of GPUs that were shipped to Malaysia, Singapore, Indonesia, and Thailand alone — about 17.5% of Nvidia's Data Center total revenue. And that’s only Southeast Asia, without counting the smuggling routed through the U.S., Mexico, and elsewhere.
+
+I forecast that smuggling to SEA alone will reach close to $30 billion by year-end, and including other regions, we’re talking about $35-40 billion and next year even 50 billion. Yes — that’s the number Jensen supposedly “guesses.”
+
+An important note: since the DeepSeek moment and the increased scrutiny on smuggling in SEA, the trend has shifted toward building data centers directly in Southeast Asia instead of smuggling into mainland China. Chinese tech firms have already built dozens of data centers across SEA and continue to expand there.
+
+3. Jensen once again denies diversion and says “people are speculating,” but in reality we’ve seen numerous investigative reports documenting actual chip-smuggling operations. And just this week, the U.S. District Court for the Northern District of California charged several individuals with Nvidia GPU smuggling from the U.S.
+
+If Jensen “sampled and tested data centers,” I’m quite sure it didn’t happen in Malaysia, Thailand, or Indonesia.
+
+And even if we ignore Jensen’s suspicious hand movements, facial expressions, and stuttering while answering the questions (anyone with basic knowledge of reading body language would understand this), Nvidia this quarter quietly removed any mention of Singapore through an “innovative” accounting trick — redefining sales based on the customer’s headquarters. If there’s no diversion, why would you change the definition of your geographic reporting TWICE in less than a year?
+
+Some food for thought.
+
+Stats: 5,892 views | 51 likes | 11 retweets | 7 replies
+Posted: Fri Nov 21 21:17:34 +0000 2025

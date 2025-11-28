@@ -1,0 +1,2182 @@
+============================================================
+BATCH COT PROCESSING
+Started: 2025-11-27 01:12:58
+Topic: venture investing, AI, technology, GPU, data centers
+Timeframe: 5 days
+Handles to process: 71
+============================================================
+
+[1/71] Processing @acapitallp...
+
+============================================================
+Processing: @acapitallp
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@acapitallp']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 6927351afcc4aa5cb4bd62ea
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: idle
+Completed after 10 seconds
+Found 4 posts, fetching content...
+
+Fetching post 1/4: https://x.com/ACapitalLP/status/1991276495688364258
+  ✓ Fetched successfully
+
+Fetching post 2/4: https://x.com/ACapitalLP/status/1992208053240807451
+  ✓ Fetched successfully
+
+Fetching post 3/4: https://x.com/ACapitalLP/status/1993616209070391528
+  ✓ Fetched successfully
+
+Fetching post 4/4: https://x.com/ACapitalLP/status/1993613739984044461
+  ✓ Fetched successfully
+
+[2/71] Processing @adamdangelo...
+
+============================================================
+Processing: @adamdangelo
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@adamdangelo']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273528fcc4aa5cb30188a2
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: idle
+Completed after 10 seconds
+Found 1 posts, fetching content...
+
+Fetching post 1/1: https://x.com/adamdangelo/status/1991933401042125264
+  ✓ Fetched successfully
+
+[3/71] Processing @alexisohanian...
+
+============================================================
+Processing: @alexisohanian
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@alexisohanian']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273535fcc4aa5cb4bd62f5
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: idle
+Completed after 40 seconds
+Found 4 posts, fetching content...
+
+Fetching post 1/4: https://x.com/alexisohanian/status/1993379199361614045
+  ✓ Fetched successfully
+
+Fetching post 2/4: https://x.com/alexisohanian/status/1991650756202836073
+  ✓ Fetched successfully
+
+Fetching post 3/4: https://x.com/alexisohanian/status/1991317421953781873
+  ✓ Fetched successfully
+
+Fetching post 4/4: https://x.com/alexisohanian/status/1992231650667999371
+  ✓ Fetched successfully
+
+[4/71] Processing @altcap...
+
+============================================================
+Processing: @altcap
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@altcap']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273561fcc4aa5caf36b19f
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: idle
+Completed after 50 seconds
+Found 2 posts, fetching content...
+
+Fetching post 1/2: https://x.com/altcap/status/1993334808702013862
+  ✓ Fetched successfully
+
+Fetching post 2/2: https://x.com/altcap/status/1992284555030745380
+  ✓ Fetched successfully
+
+[5/71] Processing @antonosika...
+
+============================================================
+Processing: @antonosika
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@antonosika']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273597fcc4aa5cb4bd62fb
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: idle
+Completed after 141 seconds
+Found 3 posts, fetching content...
+
+Fetching post 1/3: https://x.com/antonosika/status/1993410354509210014
+  ✓ Fetched successfully
+
+Fetching post 2/3: https://x.com/antonosika/status/1993349212130648303
+  ✓ Fetched successfully
+
+Fetching post 3/3: https://x.com/antonosika/status/1991798258646364654
+  ✓ Fetched successfully
+
+[6/71] Processing @apompliano...
+
+============================================================
+Processing: @apompliano
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@apompliano']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273627fcc4aa5cb4bd62ff
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: loading
+  [181s] Status: loading
+  [191s] Status: loading
+  [201s] Status: idle
+Completed after 201 seconds
+Found 4 posts, fetching content...
+
+Fetching post 1/4: https://x.com/APompliano/status/1993409355153039762
+  ✓ Fetched successfully
+
+Fetching post 2/4: https://x.com/APompliano/status/1993420678549106738
+  ✓ Fetched successfully
+
+Fetching post 3/4: https://x.com/APompliano/status/1992743863849472296
+  ✓ Fetched successfully
+
+Fetching post 4/4: https://x.com/APompliano/status/1993144412155592953
+  ✓ Fetched successfully
+
+[7/71] Processing @benthompson...
+
+============================================================
+Processing: @benthompson
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@benthompson']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 692736f5fcc4aa5cb4bd6301
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [130s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: loading
+  [181s] Status: loading
+  [191s] Status: loading
+  [201s] Status: loading
+  [211s] Status: idle
+Completed after 211 seconds
+No posts found for this handle.
+
+[8/71] Processing @bhorowitz...
+
+============================================================
+Processing: @bhorowitz
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@bhorowitz']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 692737cafcc4aa5cb4bd6305
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: idle
+Completed after 90 seconds
+No posts found for this handle.
+
+[9/71] Processing @bgurley...
+
+============================================================
+Processing: @bgurley
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@bgurley']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273827fcc4aa5cb4bd6307
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: idle
+Completed after 151 seconds
+Found 2 posts, fetching content...
+
+Fetching post 1/2: https://x.com/bgurley/status/1991978663005544870
+  ✓ Fetched successfully
+
+Fetching post 2/2: https://x.com/bgurley/status/1993554889872753029
+  ✓ Fetched successfully
+
+[10/71] Processing @billgates...
+
+============================================================
+Processing: @billgates
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@billgates']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 692738c1fcc4aa5caf36b1a1
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: idle
+Completed after 141 seconds
+No posts found for this handle.
+
+[11/71] Processing @blader...
+
+============================================================
+Processing: @blader
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@blader']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273950fcc4aa5cb4bd6309
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: loading
+  [181s] Status: loading
+  [191s] Status: idle
+Completed after 191 seconds
+No posts found for this handle.
+
+[12/71] Processing @brian_armstrong...
+
+============================================================
+Processing: @brian_armstrong
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@brian_armstrong']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273a12fcc4aa5caf36b1a3
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: loading
+  [181s] Status: loading
+  [191s] Status: loading
+  [201s] Status: loading
+  [211s] Status: loading
+  [221s] Status: loading
+  [231s] Status: loading
+  [241s] Status: loading
+  [251s] Status: loading
+  [262s] Status: idle
+Completed after 262 seconds
+Found 3 posts, fetching content...
+
+Fetching post 1/3: https://x.com/brian_armstrong/status/1992014139078684785
+  ✓ Fetched successfully
+
+Fetching post 2/3: https://x.com/brian_armstrong/status/1993714574575710624
+  ✓ Fetched successfully
+
+Fetching post 3/3: https://x.com/brian_armstrong/status/1992636741023408391
+  ✓ Fetched successfully
+
+[13/71] Processing @chamath...
+
+============================================================
+Processing: @chamath
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@chamath']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273b1bfcc4aa5cb4bd630b
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: loading
+  [181s] Status: loading
+  [191s] Status: idle
+Completed after 191 seconds
+Found 3 posts, fetching content...
+
+Fetching post 1/3: https://x.com/chamath/status/1992320842303414468
+  ✓ Fetched successfully
+
+Fetching post 2/3: https://x.com/chamath/status/1992320835466809798
+  ✓ Fetched successfully
+
+Fetching post 3/3: https://x.com/chamath/status/1993009926353174960
+  ✓ Fetched successfully
+
+[14/71] Processing @chetanp...
+
+============================================================
+Processing: @chetanp
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@chetanp']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273bdefcc4aa5caf36b1a5
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [130s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: loading
+  [181s] Status: loading
+  [191s] Status: idle
+Completed after 191 seconds
+Found 1 posts, fetching content...
+
+Fetching post 1/1: https://x.com/chetanp/status/1993493703428915690
+  ✓ Fetched successfully
+
+[15/71] Processing @contrary_res...
+
+============================================================
+Processing: @contrary_res
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@contrary_res']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273ca0fcc4aa5caf36b1a7
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: loading
+  [181s] Status: loading
+  [191s] Status: loading
+  [201s] Status: loading
+  [211s] Status: idle
+Completed after 211 seconds
+Found 1 posts, fetching content...
+
+Fetching post 1/1: https://x.com/Contrary_Res/status/1991935689727090699
+  ✓ Fetched successfully
+
+[16/71] Processing @crossbordercap...
+
+============================================================
+Processing: @crossbordercap
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@crossbordercap']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273d76fcc4aa5cb4bd630d
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: loading
+  [181s] Status: loading
+  [191s] Status: idle
+Completed after 191 seconds
+No posts found for this handle.
+
+[17/71] Processing @dan_pantera...
+
+============================================================
+Processing: @dan_pantera
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@dan_pantera']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273e38fcc4aa5cb4bd630f
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: loading
+  [181s] Status: loading
+  [191s] Status: idle
+Completed after 191 seconds
+No posts found for this handle.
+
+[18/71] Processing @davidsacks...
+
+============================================================
+Processing: @davidsacks
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@davidsacks']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273ef9fcc4aa5cb4bd6311
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: idle
+Completed after 141 seconds
+Found 2 posts, fetching content...
+
+Fetching post 1/2: https://x.com/DavidSacks/status/1993010419494273300
+  ✓ Fetched successfully
+
+Fetching post 2/2: https://x.com/DavidSacks/status/1991929287361036399
+  ✓ Fetched successfully
+
+[19/71] Processing @deanmeyerrr...
+
+============================================================
+Processing: @deanmeyerrr
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@deanmeyerrr']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273f89fcc4aa5cb4bd6313
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: idle
+Completed after 110 seconds
+No posts found for this handle.
+
+[20/71] Processing @deedydas...
+
+============================================================
+Processing: @deedydas
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@deedydas']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69273ffafcc4aa5cb4bd6315
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: loading
+  [181s] Status: loading
+  [191s] Status: loading
+  [201s] Status: loading
+  [211s] Status: idle
+Completed after 211 seconds
+Found 3 posts, fetching content...
+
+Fetching post 1/3: https://x.com/deedydas/status/1993043654148342120
+  ✓ Fetched successfully
+
+Fetching post 2/3: https://x.com/deedydas/status/1992624217645527238
+  ✓ Fetched successfully
+
+Fetching post 3/3: https://x.com/deedydas/status/1992065282786140557
+  ✓ Fetched successfully
+
+[21/71] Processing @deepakshenoy...
+
+============================================================
+Processing: @deepakshenoy
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@deepakshenoy']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 692740d1fcc4aa5cb4bd6317
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: idle
+Completed after 171 seconds
+No posts found for this handle.
+
+[22/71] Processing @deitaone...
+
+============================================================
+Processing: @deitaone
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@deitaone']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 6927417efcc4aa5caf36b1a9
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: loading
+  [181s] Status: loading
+  [191s] Status: idle
+Completed after 191 seconds
+Found 5 posts, fetching content...
+
+Fetching post 1/5: https://x.com/DeItaone/status/1993295290065944731
+  ✓ Fetched successfully
+
+Fetching post 2/5: https://x.com/DeItaone/status/1992987247704961231
+  ✓ Fetched successfully
+
+Fetching post 3/5: https://x.com/DeItaone/status/1993294464882745559
+  ✓ Fetched successfully
+
+Fetching post 4/5: https://x.com/DeItaone/status/1993343646578413594
+  ✓ Fetched successfully
+
+Fetching post 5/5: https://x.com/DeItaone/status/1993387781566128187
+  ✓ Fetched successfully
+
+[23/71] Processing @econtalker...
+
+============================================================
+Processing: @econtalker
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@econtalker']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274242fcc4aa5cb4bd6319
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: loading
+  [181s] Status: loading
+  [191s] Status: loading
+  [201s] Status: loading
+  [211s] Status: idle
+Completed after 211 seconds
+Found 1 posts, fetching content...
+
+Fetching post 1/1: https://x.com/EconTalker/status/1993679899777720637
+  ✓ Fetched successfully
+
+[24/71] Processing @eladgil...
+
+============================================================
+Processing: @eladgil
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@eladgil']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274318fcc4aa5cb4bd631b
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: idle
+Completed after 171 seconds
+No posts found for this handle.
+
+[25/71] Processing @ericschmidt...
+
+============================================================
+Processing: @ericschmidt
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@ericschmidt']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 692743c5fcc4aa5caf36b1ab
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: loading
+  [181s] Status: loading
+  [191s] Status: loading
+  [201s] Status: loading
+  [211s] Status: idle
+Completed after 211 seconds
+No posts found for this handle.
+
+[26/71] Processing @figure_robot...
+
+============================================================
+Processing: @figure_robot
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@figure_robot']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 6927449bfcc4aa5cb30188a4
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: idle
+Completed after 171 seconds
+No posts found for this handle.
+
+[27/71] Processing @firstadapter...
+
+============================================================
+Processing: @firstadapter
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@firstadapter']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274549fcc4aa5cb4bd631d
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: idle
+Completed after 161 seconds
+No posts found for this handle.
+
+[28/71] Processing @fredwilson...
+
+============================================================
+Processing: @fredwilson
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@fredwilson']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 692745ecfcc4aa5caf36b1ad
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [121s] Status: loading
+  [131s] Status: idle
+Completed after 131 seconds
+No posts found for this handle.
+
+[29/71] Processing @friedberg...
+
+============================================================
+Processing: @friedberg
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@friedberg']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274671fcc4aa5cb4bd631f
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [130s] Status: idle
+Completed after 130 seconds
+Found 1 posts, fetching content...
+
+Fetching post 1/1: https://x.com/friedberg/status/1992760390460350664
+  ✓ Fetched successfully
+
+[30/71] Processing @garrytan...
+
+============================================================
+Processing: @garrytan
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@garrytan']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 692746f7fcc4aa5cb4bd6321
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: loading
+  [171s] Status: loading
+  [181s] Status: idle
+Completed after 181 seconds
+No posts found for this handle.
+
+[31/71] Processing @grahamduncannyc...
+
+============================================================
+Processing: @grahamduncannyc
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@grahamduncannyc']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 692747aefcc4aa5cb4bd6323
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: loading
+  [141s] Status: idle
+Completed after 141 seconds
+No posts found for this handle.
+
+[32/71] Processing @harmongreg...
+
+============================================================
+Processing: @harmongreg
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@harmongreg']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 6927483dfcc4aa5cb4bd6325
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [121s] Status: loading
+  [131s] Status: loading
+  [141s] Status: loading
+  [151s] Status: loading
+  [161s] Status: idle
+Completed after 161 seconds
+No posts found for this handle.
+
+[33/71] Processing @harrystebbings...
+
+============================================================
+Processing: @harrystebbings
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@harrystebbings']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 692748e1fcc4aa5cb4bd6327
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: idle
+Completed after 30 seconds
+Found 3 posts, fetching content...
+
+Fetching post 1/3: https://x.com/HarryStebbings/status/1992979374878920944
+  ✓ Fetched successfully
+
+Fetching post 2/3: https://x.com/HarryStebbings/status/1992979384073158732
+  ✓ Fetched successfully
+
+Fetching post 3/3: https://x.com/HarryStebbings/status/1991688012682637564
+  ✓ Fetched successfully
+
+[34/71] Processing @jack...
+
+============================================================
+Processing: @jack
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@jack']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274902fcc4aa5cb4bd6329
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: idle
+Completed after 50 seconds
+No posts found for this handle.
+
+[35/71] Processing @jia_seed...
+
+============================================================
+Processing: @jia_seed
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@jia_seed']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274937fcc4aa5caf36b1af
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: idle
+Completed after 10 seconds
+Found 2 posts, fetching content...
+
+Fetching post 1/2: https://x.com/jia_seed/status/1993153190771282206
+  ✓ Fetched successfully
+
+Fetching post 2/2: https://x.com/jia_seed/status/1992395708650111090
+  ✓ Fetched successfully
+
+[36/71] Processing @jimgoetz...
+
+============================================================
+Processing: @jimgoetz
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@jimgoetz']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274944fcc4aa5cb4bd632b
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: idle
+Completed after 30 seconds
+No posts found for this handle.
+
+[37/71] Processing @jnwaters...
+
+============================================================
+Processing: @jnwaters
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@jnwaters']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274964fcc4aa5caf36b1b1
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: idle
+Completed after 30 seconds
+No posts found for this handle.
+
+[38/71] Processing @jonsakoda...
+
+============================================================
+Processing: @jonsakoda
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@jonsakoda']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274985fcc4aa5cb4bd632d
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: idle
+Completed after 10 seconds
+Found 1 posts, fetching content...
+
+Fetching post 1/1: https://x.com/jonsakoda/status/1992266524640641216
+  ✓ Fetched successfully
+
+[39/71] Processing @jtlondsdale...
+
+============================================================
+Processing: @jtlondsdale
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@jtlondsdale']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274992fcc4aa5cb4bd632f
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: idle
+Completed after 10 seconds
+Found 4 posts, fetching content...
+
+Fetching post 1/4: https://x.com/JTLonsdale/status/1993463036636520543
+  ✓ Fetched successfully
+
+Fetching post 2/4: https://x.com/JTLonsdale/status/1993425294372241430
+  ✓ Fetched successfully
+
+Fetching post 3/4: https://x.com/JTLonsdale/status/1993365888809287918
+  ✓ Fetched successfully
+
+Fetching post 4/4: https://x.com/JTLonsdale/status/1992980125517005069
+  ✓ Fetched successfully
+
+[40/71] Processing @justinsuntron...
+
+============================================================
+Processing: @justinsuntron
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@justinsuntron']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 6927499ffcc4aa5cb4bd6331
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: idle
+Completed after 50 seconds
+No posts found for this handle.
+
+[41/71] Processing @kirstenagreen...
+
+============================================================
+Processing: @kirstenagreen
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@kirstenagreen']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 692749d4fcc4aa5cb4bd6333
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: idle
+Completed after 10 seconds
+No posts found for this handle.
+
+[42/71] Processing @man_integrated...
+
+============================================================
+Processing: @man_integrated
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@man_integrated']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 692749e0fcc4aa5cb4bd6335
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: idle
+Completed after 30 seconds
+No posts found for this handle.
+
+[43/71] Processing @matthuang...
+
+============================================================
+Processing: @matthuang
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@matthuang']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274a00fcc4aa5cb30188a6
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: idle
+Completed after 30 seconds
+No posts found for this handle.
+
+[44/71] Processing @northmantrader...
+
+============================================================
+Processing: @northmantrader
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@northmantrader']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274a21fcc4aa5cb4bd6337
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: idle
+Completed after 60 seconds
+Found 5 posts, fetching content...
+
+Fetching post 1/5: https://x.com/NorthmanTrader/status/1993333522652889588
+  ✓ Fetched successfully
+
+Fetching post 2/5: https://x.com/NorthmanTrader/status/1993419036970082540
+  ✓ Fetched successfully
+
+Fetching post 3/5: https://x.com/NorthmanTrader/status/1993334176175841730
+  ✓ Fetched successfully
+
+Fetching post 4/5: https://x.com/NorthmanTrader/status/1992581670395117906
+  ✓ Fetched successfully
+
+Fetching post 5/5: https://x.com/NorthmanTrader/status/1993312092280279059
+  ✓ Fetched successfully
+
+[45/71] Processing @palmerlucky...
+
+============================================================
+Processing: @palmerlucky
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@palmerlucky']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274a61fcc4aa5cb4bd6339
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: idle
+Completed after 10 seconds
+No posts found for this handle.
+
+[46/71] Processing @patrickc...
+
+============================================================
+Processing: @patrickc
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@patrickc']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274a6efcc4aa5caf36b1b3
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: idle
+Completed after 10 seconds
+No posts found for this handle.
+
+[47/71] Processing @paulg...
+
+============================================================
+Processing: @paulg
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@paulg']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274a7afcc4aa5caf36b1b5
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: idle
+Completed after 10 seconds
+No posts found for this handle.
+
+[48/71] Processing @pergelsinger...
+
+============================================================
+Processing: @pergelsinger
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@pergelsinger']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274a86fcc4aa5cb30188a8
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: idle
+Completed after 20 seconds
+No posts found for this handle.
+
+[49/71] Processing @plaffont...
+
+============================================================
+Processing: @plaffont
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@plaffont']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274a9cfcc4aa5caf36b1b7
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: idle
+Completed after 30 seconds
+No posts found for this handle.
+
+[50/71] Processing @pmarca...
+
+============================================================
+Processing: @pmarca
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@pmarca']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274abdfcc4aa5caf36b1b9
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: idle
+Completed after 10 seconds
+No posts found for this handle.
+
+[51/71] Processing @poezhao0605...
+
+============================================================
+Processing: @poezhao0605
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@poezhao0605']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274ac9fcc4aa5cb4bd633b
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: idle
+Completed after 60 seconds
+Found 5 posts, fetching content...
+
+Fetching post 1/5: https://x.com/poezhao0605/status/1993668241512972554
+  ✓ Fetched successfully
+
+Fetching post 2/5: https://x.com/poezhao0605/status/1993243851583373503
+  ✓ Fetched successfully
+
+Fetching post 3/5: https://x.com/poezhao0605/status/1992205428084941188
+  ✓ Fetched successfully
+
+Fetching post 4/5: https://x.com/poezhao0605/status/1991787484876001446
+  ✓ Fetched successfully
+
+Fetching post 5/5: https://x.com/poezhao0605/status/1991821499968401709
+  ✓ Fetched successfully
+
+[52/71] Processing @polymarket...
+
+============================================================
+Processing: @polymarket
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@polymarket']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274b0afcc4aa5cb4bd633d
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: idle
+Completed after 50 seconds
+Found 4 posts, fetching content...
+
+Fetching post 1/4: https://x.com/Polymarket/status/1993344197865488719
+  ✓ Fetched successfully
+
+Fetching post 2/4: https://x.com/Polymarket/status/1993670057285783594
+  ✓ Fetched successfully
+
+Fetching post 3/4: https://x.com/Polymarket/status/1993092185949192460
+  ✓ Fetched successfully
+
+Fetching post 4/4: https://x.com/Polymarket/status/1993051232563609779
+  ✓ Fetched successfully
+
+[53/71] Processing @puppyeh1...
+
+============================================================
+Processing: @puppyeh1
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@puppyeh1']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274b40fcc4aa5cb4bd633f
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: idle
+Completed after 40 seconds
+No posts found for this handle.
+
+[54/71] Processing @pyquantnews...
+
+============================================================
+Processing: @pyquantnews
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@pyquantnews']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274b6afcc4aa5cb4bd6341
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: idle
+Completed after 90 seconds
+Found 3 posts, fetching content...
+
+Fetching post 1/3: https://x.com/pyquantnews/status/1991946551241969674
+  ✓ Fetched successfully
+
+Fetching post 2/3: https://x.com/pyquantnews/status/1992233931823800781
+  ✓ Fetched successfully
+
+Fetching post 3/3: https://x.com/pyquantnews/status/1991866778926870822
+  ✓ Fetched successfully
+
+[55/71] Processing @reidhoffman...
+
+============================================================
+Processing: @reidhoffman
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@reidhoffman']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274bc8fcc4aa5cb2846060
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: idle
+Completed after 10 seconds
+No posts found for this handle.
+
+[56/71] Processing @renckorzay...
+
+============================================================
+Processing: @renckorzay
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@renckorzay']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274bd4fcc4aa5cb4bd6343
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: idle
+Completed after 60 seconds
+Found 2 posts, fetching content...
+
+Fetching post 1/2: https://x.com/renckorzay/status/1993636795616305264
+  ✓ Fetched successfully
+
+Fetching post 2/2: https://x.com/renckorzay/status/1993724513796968654
+  ✓ Fetched successfully
+
+[57/71] Processing @roelofbotha...
+
+============================================================
+Processing: @roelofbotha
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@roelofbotha']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274c14fcc4aa5cb4bd6345
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: idle
+Completed after 30 seconds
+No posts found for this handle.
+
+[58/71] Processing @sama...
+
+============================================================
+Processing: @sama
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@sama']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274c34fcc4aa5cb4bd6347
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: idle
+Completed after 40 seconds
+No posts found for this handle.
+
+[59/71] Processing @saylor...
+
+============================================================
+Processing: @saylor
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@saylor']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274c5efcc4aa5caf36b1bb
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: idle
+Completed after 80 seconds
+Found 1 posts, fetching content...
+
+Fetching post 1/1: https://x.com/saylor/status/1991875241107222701
+  ✓ Fetched successfully
+
+[60/71] Processing @sequoiacapital...
+
+============================================================
+Processing: @sequoiacapital
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@sequoiacapital']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274cb1fcc4aa5cb30188aa
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: idle
+Completed after 30 seconds
+No posts found for this handle.
+
+[61/71] Processing @ssankar...
+
+============================================================
+Processing: @ssankar
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@ssankar']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274cd2fcc4aa5cb4bd6349
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: idle
+Completed after 40 seconds
+No posts found for this handle.
+
+[62/71] Processing @steve_ballmer...
+
+============================================================
+Processing: @steve_ballmer
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@steve_ballmer']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274cfcfcc4aa5caf36b1bd
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: idle
+Completed after 20 seconds
+No posts found for this handle.
+
+[63/71] Processing @taniaseary...
+
+============================================================
+Processing: @taniaseary
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@taniaseary']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274d13fcc4aa5cb4bd634b
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: idle
+Completed after 20 seconds
+No posts found for this handle.
+
+[64/71] Processing @techfund1...
+
+============================================================
+Processing: @techfund1
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@techfund1']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274d29fcc4aa5cb4bd634d
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: idle
+Completed after 40 seconds
+Found 4 posts, fetching content...
+
+Fetching post 1/4: https://x.com/techfund1/status/1993607654938161291
+  ✓ Fetched successfully
+
+Fetching post 2/4: https://x.com/techfund1/status/1992856843828199789
+  ✓ Fetched successfully
+
+Fetching post 3/4: https://x.com/techfund1/status/1992880799025426681
+  ✓ Fetched successfully
+
+Fetching post 4/4: https://x.com/techfund1/status/1992946198291095650
+  ✓ Fetched successfully
+
+[65/71] Processing @timdraper...
+
+============================================================
+Processing: @timdraper
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@timdraper']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274d55fcc4aa5caf36b1bf
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: idle
+Completed after 40 seconds
+Found 3 posts, fetching content...
+
+Fetching post 1/3: https://x.com/TimDraper/status/1993364311574782431
+  ✓ Fetched successfully
+
+Fetching post 2/3: https://x.com/TimDraper/status/1993001719446618333
+  ✓ Fetched successfully
+
+Fetching post 3/3: https://x.com/TimDraper/status/1993726584344428570
+  ✓ Fetched successfully
+
+[66/71] Processing @trace_cohen...
+
+============================================================
+Processing: @trace_cohen
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@trace_cohen']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274d81fcc4aa5cb4bd634f
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: idle
+Completed after 100 seconds
+Found 5 posts, fetching content...
+
+Fetching post 1/5: https://x.com/Trace_Cohen/status/1993025720042348549
+  ✓ Fetched successfully
+
+Fetching post 2/5: https://x.com/Trace_Cohen/status/1992739308957028765
+  ✓ Fetched successfully
+
+Fetching post 3/5: https://x.com/Trace_Cohen/status/1992980467973251150
+  ✓ Fetched successfully
+
+Fetching post 4/5: https://x.com/Trace_Cohen/status/1992982417846448284
+  ✓ Fetched successfully
+
+Fetching post 5/5: https://x.com/Trace_Cohen/status/1992982421751370188
+  ✓ Fetched successfully
+
+[67/71] Processing @varunv_malhotra...
+
+============================================================
+Processing: @varunv_malhotra
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@varunv_malhotra']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274deafcc4aa5caf36b1c1
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: idle
+Completed after 60 seconds
+No posts found for this handle.
+
+[68/71] Processing @vladtenev...
+
+============================================================
+Processing: @vladtenev
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@vladtenev']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274e28fcc4aa5cb30188ac
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: loading
+  [80s] Status: loading
+  [90s] Status: loading
+  [100s] Status: loading
+  [110s] Status: loading
+  [120s] Status: loading
+  [131s] Status: idle
+Completed after 131 seconds
+Found 5 posts, fetching content...
+
+Fetching post 1/5: https://x.com/vladtenev/status/1992401666906509404
+  ✓ Fetched successfully
+
+Fetching post 2/5: https://x.com/vladtenev/status/1993408593752998351
+  ✓ Fetched successfully
+
+Fetching post 3/5: https://x.com/vladtenev/status/1992968981947572531
+  ✓ Fetched successfully
+
+Fetching post 4/5: https://x.com/vladtenev/status/1993466831252926864
+  ✓ Fetched successfully
+
+Fetching post 5/5: https://x.com/vladtenev/status/1991995565950050466
+  ✓ Fetched successfully
+
+[69/71] Processing @Yuchenj_UW...
+
+============================================================
+Processing: @Yuchenj_UW
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@Yuchenj_UW']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274eaffcc4aa5caf36b1c3
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: loading
+  [50s] Status: loading
+  [60s] Status: loading
+  [70s] Status: idle
+Completed after 70 seconds
+Found 3 posts, fetching content...
+
+Fetching post 1/3: https://x.com/Yuchenj_UW/status/1993741553567977538
+  ✓ Fetched successfully
+
+Fetching post 2/3: https://x.com/Yuchenj_UW/status/1992820492978249992
+  ✓ Fetched successfully
+
+Fetching post 3/3: https://x.com/Yuchenj_UW/status/1992460456905376156
+  ✓ Fetched successfully
+
+[70/71] Processing @zachcoelius...
+
+============================================================
+Processing: @zachcoelius
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@zachcoelius']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274ef9fcc4aa5cb4bd6351
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: idle
+Completed after 30 seconds
+No posts found for this handle.
+
+[71/71] Processing @alexocheema...
+
+============================================================
+Processing: @alexocheema
+============================================================
+Executing COT with session: 692525b7fcc4aae81ac5eaf8
+Parameters:
+  accounts: ['@alexocheema']
+  topic: venture investing, AI, technology, GPU, data centers
+  timeframe: 5 days
+  post_count: 10
+New session created: 69274f1afcc4aa5cb4bd6353
+Polling for results...
+  [0s] Status: loading
+  [10s] Status: loading
+  [20s] Status: loading
+  [30s] Status: loading
+  [40s] Status: idle
+Completed after 40 seconds
+No posts found for this handle.
+
+============================================================
+BATCH PROCESSING COMPLETE
+============================================================
+Total handles processed: 71
+Total posts found: 90
+Report saved to: consolidated_report_20251127_030434.md
+============================================================
+
+
+TOP POSTS BY ENGAGEMENT:
+
+1. @saylor (3,910,928 views)
+   Response to MSCI Index Matter
+
+Strategy is not a fund, not a trust, and not a holding company. We’re...
+
+2. @DavidSacks (3,720,290 views)
+   According to today’s WSJ, AI-related investment accounts for half of GDP growth. A reversal would ri...
+
+3. @Yuchenj_UW (1,764,245 views)
+   Sergey used Gemini in a surprisingly creative way.
+
+He asked it inside an internal Google chat, “who...
+
+4. @DeItaone (1,230,279 views)
+   $NVDA - NVIDIA SET TO LOSE $180B AS META CONSIDERS GOOGLE CHIPS
+
+Meta is evaluating Google’s AI chip...
+
+5. @deedydas (998,952 views)
+   The most efficient business in the world makes ~$1.1B/yr net income with just 11 employees.
+
+Their f...
+
+6. @Polymarket (812,557 views)
+   BREAKING: Without continued AI investments, U.S. GDP growth would collapse in half....
+
+7. @brian_armstrong (430,139 views)
+   Earlier this year I said we’d level up our Solana game. Since then we’ve brought AgentKit and x402 t...
+
+8. @altcap (380,029 views)
+   @hblodget Yes, we own Google, Broadcom, Nvidia, OpenAI, Anthropic, etc.  Not smart enough to pick ju...
+
+9. @chamath (346,352 views)
+   “Move Fast and Break Things” vs “Move Slow and Forge Things”
+
+“Move fast and break things” was a som...
+
+10. @antonosika (338,628 views)
+   Lovable just got called out for not paying VAT in Europe yet. Many came to our defense saying the EU...
+
