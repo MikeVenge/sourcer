@@ -1,77 +1,103 @@
 # Sourcer
 
-A collection of Python tools for gathering and analyzing financial data from various sources.
+Financial data aggregation tools for Polymarket prediction markets and Twitter/X analysis.
 
-## Tools
+## Project Structure
 
-### 1. Polymarket Reader (`polymarket_reader.py`)
-
-Fetch and analyze prediction markets from Polymarket.
-
-```bash
-# Search markets by keyword
-python polymarket_reader.py --search "bitcoin"
-
-# Fetch specific event by slug
-python polymarket_reader.py --slug "what-will-googl-hit-before-2026"
-
-# Fetch markets by tag ID
-python polymarket_reader.py --tag 100381
-
-# List all available tags
-python polymarket_reader.py --list-tags
-
-# Output as JSON
-python polymarket_reader.py --search "GOOGL" --json
-
-# Save to file
-python polymarket_reader.py --search "Fed" --output fed_markets.txt
+```
+sourcer/
+├── app.py                  # FastAPI app (Railway deployment)
+├── api/                    # Vercel serverless functions
+│   ├── polymarket.py       # /api/polymarket endpoint
+│   └── twitter.py          # /api/twitter endpoint
+├── lib/                    # Core library code
+│   ├── polymarket_reader.py
+│   ├── twitter_reader.py
+│   └── twitter_reader_batch.py
+├── examples/               # Example scripts & outputs
+│   ├── googl_distribution.py
+│   └── output/
+├── docs/                   # Documentation
+├── vercel.json             # Vercel config
+├── Procfile                # Railway config
+└── requirements.txt
 ```
 
-### 2. GOOGL Distribution Analysis (`googl_distribution.py`)
+## Quick Start
 
-Analyze GOOGL stock price probabilities based on Polymarket prediction market data.
-
-- Converts touch probabilities to terminal distribution using reflection principle
-- Fits Gaussian Mixture Model for smooth interpolation
-- Calculates P(stock up) and percentiles
+### Install Dependencies
 
 ```bash
-python googl_distribution.py
+pip install -r requirements.txt
 ```
 
-### 3. Twitter Reader (`twitter_reader.py`)
-
-Fetch Twitter/X analysis using FinChat COT API.
+### Run Locally (FastAPI)
 
 ```bash
-python twitter_reader.py --accounts "@elonmusk,@sama" --topic "AI" --timeframe "7 days" --post_count 20
+uvicorn app:app --reload
 ```
 
-### 4. Twitter Batch Reader (`twitter_reader_batch.py`)
+Then visit: http://localhost:8000
 
-Run Twitter analysis for multiple accounts and consolidate results.
+### CLI Usage
 
 ```bash
-python twitter_reader_batch.py
+# Search Polymarket
+python lib/polymarket_reader.py --search "bitcoin"
+
+# Get specific event
+python lib/polymarket_reader.py --slug "what-will-googl-hit-before-2026"
+
+# Twitter analysis
+python lib/twitter_reader.py --accounts "@elonmusk" --topic "AI" --timeframe "7 days"
 ```
+
+## API Endpoints
+
+### Polymarket
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /polymarket/search?q=keyword` | Search markets by keyword |
+| `GET /polymarket/event/{slug}` | Get event details by slug |
+| `GET /polymarket/tags` | List all available tags |
+
+### Twitter
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/twitter?accounts=@handle&topic=AI` | Analyze Twitter accounts |
+
+## Deployment
+
+### Railway
+
+1. Connect your GitHub repo to Railway
+2. Railway auto-detects the `Procfile`
+3. Deploy!
+
+### Vercel
+
+1. Connect your GitHub repo to Vercel
+2. Vercel auto-detects `vercel.json`
+3. Deploy!
+
+The `api/` folder becomes serverless endpoints:
+- `/api/polymarket`
+- `/api/twitter`
 
 ## Data Sources
 
-- **Polymarket**: Prediction market data via Gamma API (`https://gamma-api.polymarket.com`)
-- **FinChat**: COT API for Twitter/X analysis
-- **Alpha Vantage**: Stock price data (via MCP)
+- **Polymarket**: Gamma API (`https://gamma-api.polymarket.com`)
+- **Twitter/X**: FinChat COT API
+- **Stock Prices**: Alpha Vantage (via MCP)
 
-## Requirements
+## Examples
 
-```bash
-pip install requests matplotlib numpy scipy
-```
+See `examples/` folder for analysis scripts:
 
-## Output Files
+- `googl_distribution.py` - GOOGL price probability analysis from Polymarket data
 
-- `googl_distribution.png` - Price probability distribution chart
-- `consolidated_report_*.md` - Twitter analysis reports
-- `*_markets_data.json` - Raw market data from Polymarket
-- `*_markets_summary.md` - Formatted market summaries
+## License
 
+MIT
