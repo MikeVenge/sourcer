@@ -284,66 +284,133 @@ def youtube_transcript(request: YouTubeRequest):
     Get transcript for a YouTube video.
     Returns transcript segments with timestamps.
     """
+    from youtube_transcript_api import YouTubeTranscriptApi
+    from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound, VideoUnavailable
+    import requests
+    
     try:
-        from youtube_transcript_api import YouTubeTranscriptApi
-        from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound
-        import requests
-        
         video_id = extract_video_id(request.url)
-        
-        # Get transcript
-        try:
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-            
-            # Try to get manual transcript first, then auto-generated
-            transcript = None
-            for t in transcript_list:
-                if not t.is_generated:
-                    transcript = t.fetch()
-                    break
-            
-            if transcript is None:
-                # Fall back to auto-generated
-                transcript = transcript_list.find_generated_transcript(['en']).fetch()
-                
-        except NoTranscriptFound:
-            # Try any available transcript
-            transcript = YouTubeTranscriptApi.get_transcript(video_id)
-        
-        # Get video info using oEmbed API
-        video_info = {}
-        try:
-            oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
-            resp = requests.get(oembed_url, timeout=10)
-            if resp.ok:
-                oembed = resp.json()
-                video_info = {
-                    "title": oembed.get("title", "Unknown"),
-                    "channel": oembed.get("author_name", "Unknown"),
-                    "thumbnail": oembed.get("thumbnail_url"),
-                    "duration": sum(s.get('duration', 0) for s in transcript) if transcript else 0
-                }
-        except:
-            video_info = {
-                "title": f"Video {video_id}",
-                "channel": "Unknown",
-                "duration": sum(s.get('duration', 0) for s in transcript) if transcript else 0
-            }
-        
-        return {
-            "video_id": video_id,
-            "video_info": video_info,
-            "transcript": transcript
-        }
-        
-    except TranscriptsDisabled:
-        raise HTTPException(status_code=400, detail="Transcripts are disabled for this video")
-    except NoTranscriptFound:
-        raise HTTPException(status_code=404, detail="No transcript found for this video")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching transcript: {str(e)}")
+    
+    # Get video info first using oEmbed API
+    video_info = {
+        "title": f"Video {video_id}",
+        "channel": "Unknown",
+        "thumbnail": f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg",
+        "duration": 0
+    }
+    
+    try:
+        oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
+        resp = requests.get(oembed_url, timeout=10)
+        if resp.ok:
+            oembed = resp.json()
+            video_info["title"] = oembed.get("title", video_info["title"])
+            video_info["channel"] = oembed.get("author_name", video_info["channel"])
+            if oembed.get("thumbnail_url"):
+                video_info["thumbnail"] = oembed.get("thumbnail_url")
+    except Exception:
+        pass  # Keep default video_info
+    
+    # Get transcript with retry logic for rate limiting
+    transcript = None
+    max_retries = 3
+    
+    for attempt in range(max_retries):
+        try:
+            # First, try to list available transcripts
+            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            
+            # Try generated English transcript (most common for auto-captions)
+            try:
+                generated = transcript_list.find_generated_transcript(['en'])
+                transcript = generated.fetch()
+                print(f"Got auto-generated English transcript for {video_id}")
+                break
+            except Exception as gen_err:
+                error_str = str(gen_err).lower()
+                if "429" in error_str or "too many requests" in error_str:
+                    raise gen_err  # Re-raise to trigger retry
+                print(f"No auto-generated English: {gen_err}")
+                
+                # Try manually created English transcript
+                try:
+                    manual = transcript_list.find_manually_created_transcript(['en', 'en-US', 'en-GB'])
+                    transcript = manual.fetch()
+                    print(f"Got manual English transcript for {video_id}")
+                    break
+                except Exception as man_err:
+                    error_str = str(man_err).lower()
+                    if "429" in error_str or "too many requests" in error_str:
+                        raise man_err  # Re-raise to trigger retry
+                    print(f"No manual English: {man_err}")
+                    
+                    # Try any available transcript
+                    for t in transcript_list:
+                        try:
+                            transcript = t.fetch()
+                            print(f"Got transcript in {t.language_code} for {video_id}")
+                            break
+                        except Exception as t_err:
+                            error_str = str(t_err).lower()
+                            if "429" in error_str or "too many requests" in error_str:
+                                raise t_err  # Re-raise to trigger retry
+                            continue
+                    
+                    if transcript:
+                        break
+                        
+        except TranscriptsDisabled:
+            raise HTTPException(
+                status_code=400, 
+                detail="Transcripts/captions are disabled for this video. The video owner has not enabled captions."
+            )
+        except VideoUnavailable:
+            raise HTTPException(
+                status_code=404, 
+                detail="Video is unavailable. It may be private, deleted, or region-restricted."
+            )
+        except NoTranscriptFound as e:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No transcript found: {str(e)}"
+            )
+        except Exception as e:
+            error_str = str(e).lower()
+            if "429" in error_str or "too many requests" in error_str:
+                if attempt < max_retries - 1:
+                    import time
+                    wait_time = (attempt + 1) * 2  # 2, 4, 6 seconds
+                    print(f"Rate limited, waiting {wait_time}s before retry {attempt + 2}/{max_retries}")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    raise HTTPException(
+                        status_code=429,
+                        detail="YouTube is rate limiting requests. Please wait a moment and try again."
+                    )
+            print(f"Transcript error for {video_id}: {type(e).__name__}: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error fetching transcript: {type(e).__name__}: {str(e)}"
+            )
+    
+    # Check if we got a transcript
+    if not transcript:
+        raise HTTPException(
+            status_code=404, 
+            detail="No transcript available for this video. The video may not have any captions."
+        )
+    
+    # Calculate duration from transcript
+    video_info["duration"] = sum(s.get('duration', 0) for s in transcript)
+    
+    return {
+        "video_id": video_id,
+        "video_info": video_info,
+        "transcript": transcript
+    }
 
 
 # ============================================================================
