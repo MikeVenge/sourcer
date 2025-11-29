@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { TrendingUp, ExternalLink, Download, Check, AlertCircle, Calendar, DollarSign } from 'lucide-react'
 import { generateMarketDetailsMarkdown, downloadMarkdown } from '../utils/exportMarkdown'
 import DistributionChart from './DistributionChart'
+import PriceHistoryChart from './PriceHistoryChart'
 
 // Backend API URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -230,6 +231,14 @@ export default function MarketDetails({ data }) {
         <DistributionChart 
           outcomes={details.outcomes} 
           title="Price Probability Distribution"
+        />
+      )}
+
+      {/* Price History Chart */}
+      {data?.market?.slug && (
+        <PriceHistoryChart 
+          slug={data.market.slug} 
+          title="Price History"
         />
       )}
 

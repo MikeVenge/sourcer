@@ -251,6 +251,185 @@ def list_tags() -> list:
     return response.json()
 
 
+# CLOB API for price history
+CLOB_API_URL = "https://clob.polymarket.com"
+
+
+def get_clob_token_ids(event_slug: str, market_index: int = 0) -> tuple:
+    """
+    Get the CLOB token IDs for a market within an event.
+    
+    Args:
+        event_slug: Event slug from Polymarket URL
+        market_index: Index of market within the event (default: 0)
+    
+    Returns:
+        Tuple of (yes_token_id, no_token_id, market_question)
+    """
+    response = requests.get(f"{BASE_URL}/events/slug/{event_slug}", timeout=30)
+    response.raise_for_status()
+    event = response.json()
+    
+    markets = event.get('markets', [])
+    if market_index >= len(markets):
+        raise ValueError(f"Market index {market_index} out of range. Event has {len(markets)} markets.")
+    
+    market = markets[market_index]
+    token_ids = market.get('clobTokenIds', [])
+    
+    if isinstance(token_ids, str):
+        token_ids = json.loads(token_ids)
+    
+    yes_token = token_ids[0] if len(token_ids) > 0 else None
+    no_token = token_ids[1] if len(token_ids) > 1 else None
+    
+    return yes_token, no_token, market.get('question')
+
+
+def fetch_price_history(
+    token_id: str,
+    interval: str = "max",
+    fidelity: int = 1440
+) -> list:
+    """
+    Fetch price history for a market token.
+    
+    Args:
+        token_id: CLOB token ID
+        interval: Time interval ('1m', '1h', '6h', '1d', '1w', 'max')
+        fidelity: Resolution in minutes (e.g., 60=hourly, 1440=daily)
+    
+    Returns:
+        List of {t: timestamp, p: price} dictionaries
+    """
+    params = {
+        'market': token_id,
+        'interval': interval,
+        'fidelity': fidelity
+    }
+    
+    response = requests.get(f"{CLOB_API_URL}/prices-history", params=params, timeout=30)
+    response.raise_for_status()
+    data = response.json()
+    
+    return data.get('history', [])
+
+
+def get_market_price_history(event_slug: str, market_index: int = 0, fidelity: int = 1440) -> dict:
+    """
+    Get full price history for a market.
+    
+    Args:
+        event_slug: Event slug
+        market_index: Index of market within event
+        fidelity: Resolution in minutes (1440=daily, 60=hourly)
+    
+    Returns:
+        Dictionary with market info and price history
+    """
+    # Get token IDs
+    yes_token, no_token, question = get_clob_token_ids(event_slug, market_index)
+    
+    if not yes_token:
+        return {'error': 'Could not find token ID for this market'}
+    
+    # Fetch price history
+    history = fetch_price_history(yes_token, interval="max", fidelity=fidelity)
+    
+    return {
+        'event_slug': event_slug,
+        'question': question,
+        'token_id': yes_token,
+        'outcome': 'Yes',
+        'fidelity_minutes': fidelity,
+        'data_points': len(history),
+        'history': history
+    }
+
+
+def get_all_markets_price_history(event_slug: str, fidelity: int = 60) -> dict:
+    """
+    Get price history for ALL markets in an event.
+    
+    Args:
+        event_slug: Event slug
+        fidelity: Resolution in minutes (60=hourly, 1440=daily)
+    
+    Returns:
+        Dictionary with event info and price history for all markets
+    """
+    # Fetch the event first
+    response = requests.get(f"{BASE_URL}/events/slug/{event_slug}", timeout=30)
+    response.raise_for_status()
+    event = response.json()
+    
+    markets = event.get('markets', [])
+    all_histories = []
+    
+    # Define colors for different outcomes
+    colors = [
+        '#f97316',  # orange
+        '#3b82f6',  # blue
+        '#22c55e',  # green
+        '#eab308',  # yellow
+        '#ec4899',  # pink
+        '#8b5cf6',  # purple
+        '#06b6d4',  # cyan
+        '#ef4444',  # red
+        '#84cc16',  # lime
+        '#f59e0b',  # amber
+    ]
+    
+    for i, market in enumerate(markets):
+        # Skip closed markets
+        if market.get('closed'):
+            continue
+            
+        token_ids = market.get('clobTokenIds', [])
+        if isinstance(token_ids, str):
+            token_ids = json.loads(token_ids)
+        
+        if not token_ids:
+            continue
+            
+        yes_token = token_ids[0]
+        
+        # Get outcome name
+        name = market.get('groupItemTitle') or market.get('question') or f'Outcome {i+1}'
+        
+        # Get current probability
+        outcome_prices = market.get('outcomePrices', '[]')
+        if isinstance(outcome_prices, str):
+            try:
+                outcome_prices = json.loads(outcome_prices)
+            except:
+                outcome_prices = []
+        current_prob = float(outcome_prices[0]) if outcome_prices else 0
+        
+        try:
+            # Fetch price history
+            history = fetch_price_history(yes_token, interval="max", fidelity=fidelity)
+            
+            if history:
+                all_histories.append({
+                    'name': name,
+                    'token_id': yes_token,
+                    'current_probability': current_prob,
+                    'color': colors[i % len(colors)],
+                    'history': history
+                })
+        except Exception as e:
+            print(f"Error fetching history for {name}: {e}")
+            continue
+    
+    return {
+        'event_slug': event_slug,
+        'title': event.get('title'),
+        'fidelity_minutes': fidelity,
+        'markets': all_histories
+    }
+
+
 def format_search_results(results: dict) -> str:
     """Format search results for display."""
     lines = []

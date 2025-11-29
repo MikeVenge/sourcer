@@ -111,6 +111,43 @@ def polymarket_tags():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/polymarket/price-history/{slug}")
+def polymarket_price_history(
+    slug: str,
+    market_index: int = Query(0, description="Market index within event"),
+    fidelity: int = Query(1440, description="Resolution in minutes (1440=daily, 60=hourly)")
+):
+    """Get historical price data for a Polymarket market"""
+    try:
+        from lib.polymarket_reader import get_market_price_history
+        result = get_market_price_history(slug, market_index, fidelity)
+        if 'error' in result:
+            raise HTTPException(status_code=404, detail=result['error'])
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/polymarket/price-history-all/{slug}")
+def polymarket_price_history_all(
+    slug: str,
+    fidelity: int = Query(60, description="Resolution in minutes (60=hourly, 1440=daily)")
+):
+    """Get historical price data for ALL markets in a Polymarket event"""
+    try:
+        from lib.polymarket_reader import get_all_markets_price_history
+        result = get_all_markets_price_history(slug, fidelity)
+        if 'error' in result:
+            raise HTTPException(status_code=404, detail=result['error'])
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ============================================================================
 # Twitter/X Endpoints
 # ============================================================================
