@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Search, TrendingUp, DollarSign, BarChart3, Download, Check, AlertCircle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Search, TrendingUp, DollarSign, BarChart3, Download, Check, AlertCircle, RefreshCw } from 'lucide-react'
 import { generatePolymarketResultsMarkdown, downloadMarkdown } from '../utils/exportMarkdown'
 import { saveQueryToHistory } from './QueryHistory'
 
@@ -24,15 +24,22 @@ export default function PolymarketSearch({ onSearch, initialKeyword, showResults
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [apiError, setApiError] = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const hasLoadedRef = useRef(false)
+  const keywordRef = useRef('')
 
   useEffect(() => {
+    // Only fetch if we haven't loaded yet OR if the keyword has changed
     if (showResults && initialKeyword) {
-      fetchResults(initialKeyword)
+      if (!hasLoadedRef.current || keywordRef.current !== initialKeyword) {
+        fetchResults(initialKeyword, false)
+      }
     }
   }, [showResults, initialKeyword])
 
-  const fetchResults = async (searchKeyword) => {
+  const fetchResults = async (searchKeyword, isRefresh = false) => {
     setLoading(true)
+    if (isRefresh) setRefreshing(true)
     setApiError(null)
     
     try {
@@ -62,14 +69,19 @@ export default function PolymarketSearch({ onSearch, initialKeyword, showResults
       }))
       
       setResults(events)
+      hasLoadedRef.current = true
+      keywordRef.current = searchKeyword
       
-      // Save to query history
-      saveQueryToHistory('polymarket', { keyword: searchKeyword }, `Polymarket: ${searchKeyword}`)
+      // Save to query history (only on initial load, not refresh)
+      if (!isRefresh) {
+        saveQueryToHistory('polymarket', { keyword: searchKeyword }, `Polymarket: ${searchKeyword}`)
+      }
     } catch (error) {
       console.error('Polymarket search error:', error)
       setApiError(error.message)
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
 
@@ -121,8 +133,17 @@ export default function PolymarketSearch({ onSearch, initialKeyword, showResults
       <div className="results-panel">
         <div className="results-header">
           <h3>Results for "{initialKeyword}"</h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <span className="results-count">{results.length} markets found</span>
+            <button 
+              className="save-btn"
+              onClick={() => fetchResults(initialKeyword, true)}
+              disabled={refreshing}
+              title="Refresh results"
+            >
+              <RefreshCw size={16} className={refreshing ? 'spinning' : ''} />
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
             <button 
               className={`save-btn ${saved ? 'saved' : ''}`}
               onClick={handleSave}

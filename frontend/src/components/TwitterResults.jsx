@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { MessageCircle, Heart, Repeat, Eye, MessageSquare, Download, Check, User, AlertCircle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { MessageCircle, Heart, Repeat, Eye, MessageSquare, Download, Check, User, AlertCircle, RefreshCw } from 'lucide-react'
 import { generateTwitterMarkdown, downloadMarkdown } from '../utils/exportMarkdown'
 import { saveQueryToHistory } from './QueryHistory'
 
@@ -36,60 +36,81 @@ const formatDate = (dateStr) => {
 }
 
 export default function TwitterResults({ data }) {
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [posts, setPosts] = useState([])
   const [errors, setErrors] = useState([])
   const [processingStatus, setProcessingStatus] = useState('')
   const [saved, setSaved] = useState(false)
   const [apiError, setApiError] = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const hasLoadedRef = useRef(false)
+  const dataKeyRef = useRef('')
 
-  useEffect(() => {
-    // Call the backend API to analyze Twitter accounts
-    const analyzeTwitter = async () => {
-      setLoading(true)
-      setApiError(null)
-      setProcessingStatus('Connecting to API...')
-      
-      try {
-        const response = await fetch(`${API_URL}/twitter/analyze`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            handles: data.handles,
-            topic: data.topic,
-            timeframe: data.timeframe || 5,
-            post_count: 10
-          })
+  // Generate a key to identify the data request
+  const getDataKey = () => {
+    return JSON.stringify({
+      handles: data.handles,
+      topic: data.topic,
+      timeframe: data.timeframe
+    })
+  }
+
+  const analyzeTwitter = async (isRefresh = false) => {
+    setLoading(true)
+    if (isRefresh) setRefreshing(true)
+    setApiError(null)
+    setProcessingStatus('Connecting to API...')
+    
+    try {
+      const response = await fetch(`${API_URL}/twitter/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          handles: data.handles,
+          topic: data.topic,
+          timeframe: data.timeframe || 5,
+          post_count: 10
         })
-        
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status} ${response.statusText}`)
-        }
-        
-        const result = await response.json()
-        
-        // Posts are already sorted by views from the backend
-        setPosts(result.posts || [])
-        setErrors(result.errors || [])
-        
-        // Save to query history
+      })
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`)
+      }
+      
+      const result = await response.json()
+      
+      // Posts are already sorted by views from the backend
+      setPosts(result.posts || [])
+      setErrors(result.errors || [])
+      hasLoadedRef.current = true
+      dataKeyRef.current = getDataKey()
+      
+      // Save to query history (only on initial load, not refresh)
+      if (!isRefresh) {
         saveQueryToHistory('twitter', {
           handles: data.handles,
           topic: data.topic,
           timeframe: data.timeframe
         }, `Twitter: ${data.handles.slice(0, 2).join(', ')}${data.handles.length > 2 ? '...' : ''}`)
-        
-      } catch (error) {
-        console.error('Twitter analysis error:', error)
-        setApiError(error.message)
-      } finally {
-        setLoading(false)
       }
+      
+    } catch (error) {
+      console.error('Twitter analysis error:', error)
+      setApiError(error.message)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
     }
-    
-    analyzeTwitter()
+  }
+
+  useEffect(() => {
+    // Only fetch if we haven't loaded yet OR if the data has changed
+    const currentKey = getDataKey()
+    if (!hasLoadedRef.current || dataKeyRef.current !== currentKey) {
+      analyzeTwitter(false)
+    }
   }, [data])
 
   const handleSave = () => {
@@ -162,8 +183,17 @@ export default function TwitterResults({ data }) {
             {data.handles.length} accounts • Last {data.timeframe || 5} days • {uniqueAuthors} with posts
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <span className="results-count">{posts.length} posts found</span>
+          <button 
+            className="save-btn"
+            onClick={() => analyzeTwitter(true)}
+            disabled={refreshing}
+            title="Refresh results"
+          >
+            <RefreshCw size={16} className={refreshing ? 'spinning' : ''} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
           <button 
             className={`save-btn ${saved ? 'saved' : ''}`}
             onClick={handleSave}

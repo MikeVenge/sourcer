@@ -546,6 +546,10 @@ textarea.form-input {
   to { transform: rotate(360deg); }
 }
 
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
 .loading-text {
   color: var(--text-secondary);
   font-size: 0.95rem;

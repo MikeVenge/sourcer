@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { TrendingUp, ExternalLink, Download, Check, AlertCircle, Calendar, DollarSign } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { TrendingUp, ExternalLink, Download, Check, AlertCircle, Calendar, DollarSign, RefreshCw } from 'lucide-react'
 import { generateMarketDetailsMarkdown, downloadMarkdown } from '../utils/exportMarkdown'
 import DistributionChart from './DistributionChart'
 import PriceHistoryChart from './PriceHistoryChart'
@@ -45,91 +45,103 @@ const extractPriceFromName = (name) => {
 }
 
 export default function MarketDetails({ data }) {
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [details, setDetails] = useState(null)
   const [saved, setSaved] = useState(false)
   const [apiError, setApiError] = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const hasLoadedRef = useRef(false)
+  const slugRef = useRef('')
 
-  useEffect(() => {
-    const fetchDetails = async () => {
-      setLoading(true)
-      setApiError(null)
+  const fetchDetails = async (isRefresh = false) => {
+    setLoading(true)
+    if (isRefresh) setRefreshing(true)
+    setApiError(null)
+    
+    try {
+      const slug = data.market.slug
+      const response = await fetch(`${API_URL}/polymarket/event/${slug}`)
       
-      try {
-        const slug = data.market.slug
-        const response = await fetch(`${API_URL}/polymarket/event/${slug}`)
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`)
+      }
+      
+      const eventData = await response.json()
+      
+      // Parse outcomes from markets
+      // Only include OPEN (not closed) markets
+      const markets = eventData.markets || []
+      const outcomes = []
+      
+      markets.forEach(market => {
+        // Skip closed markets
+        if (market.closed) return
         
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status} ${response.statusText}`)
+        // Get the outcome name from groupItemTitle or question
+        const name = market.groupItemTitle || market.question || 'Unknown'
+        
+        // Parse outcome prices - first price is "Yes" probability
+        let outcomePrices = market.outcomePrices || '[]'
+        if (typeof outcomePrices === 'string') {
+          try { outcomePrices = JSON.parse(outcomePrices) } catch { outcomePrices = [] }
         }
         
-        const eventData = await response.json()
+        // The first price is the "Yes" probability (chance this outcome wins)
+        const yesProbability = outcomePrices[0] ? parseFloat(outcomePrices[0]) : 0
+        const noProbability = outcomePrices[1] ? parseFloat(outcomePrices[1]) : 1 - yesProbability
         
-        // Parse outcomes from markets
-        // Only include OPEN (not closed) markets
-        const markets = eventData.markets || []
-        const outcomes = []
-        
-        markets.forEach(market => {
-          // Skip closed markets
-          if (market.closed) return
-          
-          // Get the outcome name from groupItemTitle or question
-          const name = market.groupItemTitle || market.question || 'Unknown'
-          
-          // Parse outcome prices - first price is "Yes" probability
-          let outcomePrices = market.outcomePrices || '[]'
-          if (typeof outcomePrices === 'string') {
-            try { outcomePrices = JSON.parse(outcomePrices) } catch { outcomePrices = [] }
-          }
-          
-          // The first price is the "Yes" probability (chance this outcome wins)
-          const yesProbability = outcomePrices[0] ? parseFloat(outcomePrices[0]) : 0
-          const noProbability = outcomePrices[1] ? parseFloat(outcomePrices[1]) : 1 - yesProbability
-          
-          outcomes.push({
-            name: name,
-            probability: yesProbability,
-            yesPrice: Math.round(yesProbability * 100),
-            noPrice: Math.round(noProbability * 100),
-            volume: parseFloat(market.volume || 0),
-            closed: market.closed
-          })
+        outcomes.push({
+          name: name,
+          probability: yesProbability,
+          yesPrice: Math.round(yesProbability * 100),
+          noPrice: Math.round(noProbability * 100),
+          volume: parseFloat(market.volume || 0),
+          closed: market.closed
         })
-        
-        // Sort outcomes by price descending (highest price first)
-        // Filter out very low probability outcomes (< 0.5%)
-        const filteredOutcomes = outcomes
-          .filter(o => o.probability >= 0.005)
-          .sort((a, b) => extractPriceFromName(b.name) - extractPriceFromName(a.name))
-        
-        setDetails({
-          ...data.market,
-          title: eventData.title,
-          description: eventData.description,
-          volume: parseFloat(eventData.volume || 0),
-          liquidity: parseFloat(eventData.liquidity || 0),
-          endDate: eventData.endDate ? new Date(eventData.endDate).toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
-            year: 'numeric' 
-          }) : 'N/A',
-          outcomes: filteredOutcomes.length > 0 ? filteredOutcomes : null,
-          url: `https://polymarket.com/event/${eventData.slug}`
-        })
-      } catch (error) {
-        console.error('Market details error:', error)
-        setApiError(error.message)
-        setDetails({
-          ...data.market,
-          outcomes: null
-        })
-      } finally {
-        setLoading(false)
-      }
+      })
+      
+      // Sort outcomes by price descending (highest price first)
+      // Filter out very low probability outcomes (< 0.5%)
+      const filteredOutcomes = outcomes
+        .filter(o => o.probability >= 0.005)
+        .sort((a, b) => extractPriceFromName(b.name) - extractPriceFromName(a.name))
+      
+      setDetails({
+        ...data.market,
+        title: eventData.title,
+        description: eventData.description,
+        volume: parseFloat(eventData.volume || 0),
+        liquidity: parseFloat(eventData.liquidity || 0),
+        endDate: eventData.endDate ? new Date(eventData.endDate).toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric', 
+          year: 'numeric' 
+        }) : 'N/A',
+        outcomes: filteredOutcomes.length > 0 ? filteredOutcomes : null,
+        url: `https://polymarket.com/event/${eventData.slug}`
+      })
+      
+      hasLoadedRef.current = true
+      slugRef.current = slug
+    } catch (error) {
+      console.error('Market details error:', error)
+      setApiError(error.message)
+      setDetails({
+        ...data.market,
+        outcomes: null
+      })
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
     }
-    
-    fetchDetails()
+  }
+
+  useEffect(() => {
+    // Only fetch if we haven't loaded yet OR if the slug has changed
+    const currentSlug = data.market.slug
+    if (!hasLoadedRef.current || slugRef.current !== currentSlug) {
+      fetchDetails(false)
+    }
   }, [data])
 
   const handleSave = () => {
@@ -204,6 +216,15 @@ export default function MarketDetails({ data }) {
             </div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button 
+              className="save-btn"
+              onClick={() => fetchDetails(true)}
+              disabled={refreshing}
+              title="Refresh data"
+            >
+              <RefreshCw size={16} className={refreshing ? 'spinning' : ''} />
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
             <button 
               className={`save-btn ${saved ? 'saved' : ''}`}
               onClick={handleSave}
