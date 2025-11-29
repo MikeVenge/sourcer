@@ -11,7 +11,7 @@ export default function TwitterInput({ onSubmit }) {
     if (!handles.trim() || !topic.trim()) return
     
     const handleList = handles
-      .split(/[\n,]/)
+      .split(/[\n,\s]+/)  // Split on newlines, commas, OR whitespace
       .map(h => h.trim().replace('@', ''))
       .filter(h => h.length > 0)
     
