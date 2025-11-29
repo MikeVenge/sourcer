@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, TrendingUp, DollarSign, BarChart3, Download, Check, AlertCircle } from 'lucide-react'
 import { generatePolymarketResultsMarkdown, downloadMarkdown } from '../utils/exportMarkdown'
+import { saveQueryToHistory } from './QueryHistory'
 
 // Backend API URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -61,6 +62,9 @@ export default function PolymarketSearch({ onSearch, initialKeyword, showResults
       }))
       
       setResults(events)
+      
+      // Save to query history
+      saveQueryToHistory('polymarket', { keyword: searchKeyword }, `Polymarket: ${searchKeyword}`)
     } catch (error) {
       console.error('Polymarket search error:', error)
       setApiError(error.message)

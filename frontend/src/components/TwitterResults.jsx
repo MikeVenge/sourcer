@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { MessageCircle, Heart, Repeat, Eye, MessageSquare, Download, Check, User, AlertCircle } from 'lucide-react'
 import { generateTwitterMarkdown, downloadMarkdown } from '../utils/exportMarkdown'
+import { saveQueryToHistory } from './QueryHistory'
 
 // Backend API URL - change this to your deployed URL in production
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -72,6 +73,13 @@ export default function TwitterResults({ data }) {
         // Posts are already sorted by views from the backend
         setPosts(result.posts || [])
         setErrors(result.errors || [])
+        
+        // Save to query history
+        saveQueryToHistory('twitter', {
+          handles: data.handles,
+          topic: data.topic,
+          timeframe: data.timeframe
+        }, `Twitter: ${data.handles.slice(0, 2).join(', ')}${data.handles.length > 2 ? '...' : ''}`)
         
       } catch (error) {
         console.error('Twitter analysis error:', error)

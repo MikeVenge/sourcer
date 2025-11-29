@@ -6,6 +6,7 @@ import TwitterInput from './components/TwitterInput'
 import PolymarketSearch from './components/PolymarketSearch'
 import MarketDetails from './components/MarketDetails'
 import TwitterResults from './components/TwitterResults'
+import QueryHistory from './components/QueryHistory'
 
 // LocalStorage key for persisting tabs
 const STORAGE_KEY = 'sourcer_tabs'
@@ -127,12 +128,38 @@ function App() {
     addTab('market-details', market.title.slice(0, 25) + '...', { market, status: 'loading' })
   }
 
+  // Handle re-running a query from history
+  const handleHistorySelect = (historyItem) => {
+    if (historyItem.type === 'polymarket') {
+      // Re-run Polymarket search
+      addTab('polymarket-results', `PM: ${historyItem.query.keyword}`, { 
+        keyword: historyItem.query.keyword, 
+        results: null, 
+        status: 'loading' 
+      })
+    } else if (historyItem.type === 'twitter') {
+      // Re-run Twitter analysis
+      const topic = historyItem.query.topic || 'Analysis'
+      addTab('twitter-results', `Twitter: ${topic.slice(0, 20)}...`, { 
+        handles: historyItem.query.handles,
+        topic: historyItem.query.topic,
+        timeframe: historyItem.query.timeframe || 5,
+        status: 'loading' 
+      })
+    }
+  }
+
   const renderTabContent = () => {
     if (!activeTab) return null
 
     switch (activeTab.type) {
       case 'home':
-        return <SourceSelector onSelect={handleSourceSelect} />
+        return (
+          <div className="home-container">
+            <SourceSelector onSelect={handleSourceSelect} />
+            <QueryHistory onSelectQuery={handleHistorySelect} />
+          </div>
+        )
       case 'twitter-input':
         return <TwitterInput onSubmit={handleTwitterSubmit} />
       case 'twitter-results':

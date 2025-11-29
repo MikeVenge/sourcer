@@ -93,6 +93,15 @@ body {
     var(--bg-primary);
 }
 
+/* Home Container - SourceSelector + QueryHistory */
+.home-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
 /* Tab Container */
 .tab-container {
   background: var(--bg-secondary);
