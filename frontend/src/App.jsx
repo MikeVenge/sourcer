@@ -7,6 +7,7 @@ import PolymarketSearch from './components/PolymarketSearch'
 import MarketDetails from './components/MarketDetails'
 import TwitterResults from './components/TwitterResults'
 import QueryHistory from './components/QueryHistory'
+import SavedFiles from './components/SavedFiles'
 
 // LocalStorage key for persisting tabs
 const STORAGE_KEY = 'sourcer_tabs'
@@ -158,6 +159,7 @@ function App() {
           <div className="home-container">
             <SourceSelector onSelect={handleSourceSelect} />
             <QueryHistory onSelectQuery={handleHistorySelect} />
+            <SavedFiles />
           </div>
         )
       case 'twitter-input':

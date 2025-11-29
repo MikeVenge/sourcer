@@ -1,6 +1,8 @@
 // Utility functions for exporting results to markdown
 // Format matches the Python twitter_reader_batch.py output
 
+import { saveMarkdownFile } from '../components/SavedFiles'
+
 // Helper to generate consistent timestamp for filenames
 const getTimestamp = () => {
   const now = new Date()
@@ -157,12 +159,15 @@ export const generateMarketDetailsMarkdown = (details) => {
   return { content: md, filename }
 }
 
-export const downloadMarkdown = (content, filename) => {
+export const downloadMarkdown = (content, filename, type = 'unknown', metadata = {}) => {
   // Ensure filename ends with .md
   let safeFilename = filename
   if (!safeFilename.toLowerCase().endsWith('.md')) {
     safeFilename = `${safeFilename}.md`
   }
+  
+  // Save to localStorage for later retrieval
+  saveMarkdownFile(safeFilename, content, type, metadata)
   
   // Use text/plain to avoid browser MIME type issues
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })

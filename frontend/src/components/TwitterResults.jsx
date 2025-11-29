@@ -115,7 +115,11 @@ export default function TwitterResults({ data }) {
 
   const handleSave = () => {
     const { content, filename } = generateTwitterMarkdown(data, posts)
-    downloadMarkdown(content, filename)
+    downloadMarkdown(content, filename, 'twitter', { 
+      handles: data.handles, 
+      topic: data.topic,
+      timeframe: data.timeframe 
+    })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }

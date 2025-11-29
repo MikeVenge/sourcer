@@ -147,7 +147,10 @@ export default function MarketDetails({ data }) {
   const handleSave = () => {
     if (!details) return
     const { content, filename } = generateMarketDetailsMarkdown(details)
-    downloadMarkdown(content, filename)
+    downloadMarkdown(content, filename, 'polymarket-details', { 
+      title: details.title,
+      slug: details.slug 
+    })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }

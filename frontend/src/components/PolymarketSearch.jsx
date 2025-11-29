@@ -93,7 +93,7 @@ export default function PolymarketSearch({ onSearch, initialKeyword, showResults
 
   const handleSave = () => {
     const { content, filename } = generatePolymarketResultsMarkdown(initialKeyword, results)
-    downloadMarkdown(content, filename)
+    downloadMarkdown(content, filename, 'polymarket-search', { keyword: initialKeyword })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
