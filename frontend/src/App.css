@@ -309,6 +309,75 @@ body {
   line-height: 1.6;
 }
 
+/* Compact Source Selector */
+.source-selector.compact {
+  min-height: auto;
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.source-selector.compact h1 {
+  font-size: 1.5rem;
+  margin-bottom: 0;
+}
+
+.source-cards-compact {
+  display: flex;
+  gap: 1rem;
+}
+
+.source-card-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.source-card-compact:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-highlight);
+}
+
+.source-card-compact.twitter:hover {
+  border-color: var(--twitter-blue);
+  box-shadow: 0 4px 20px rgba(29, 161, 242, 0.2);
+}
+
+.source-card-compact.polymarket:hover {
+  border-color: var(--polymarket-purple);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.2);
+}
+
+.source-card-compact .source-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.source-card-compact.twitter .source-icon {
+  background: linear-gradient(135deg, var(--twitter-blue), #0d8bd9);
+  box-shadow: 0 4px 16px rgba(29, 161, 242, 0.3);
+}
+
+.source-card-compact.polymarket .source-icon {
+  background: linear-gradient(135deg, var(--polymarket-purple), #7c3aed);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+}
+
+.source-card-compact span {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
 /* Input Panel */
 .input-panel {
   max-width: 700px;
