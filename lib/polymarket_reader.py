@@ -22,7 +22,7 @@ BASE_URL = "https://gamma-api.polymarket.com"
 
 def search_markets(keyword: str, limit: int = 20, include_closed: bool = False) -> dict:
     """
-    Search for markets by keyword using public-search + client-side filtering.
+    Search for markets by keyword using multiple API endpoints for comprehensive results.
     
     Args:
         keyword: Search term
@@ -36,11 +36,10 @@ def search_markets(keyword: str, limit: int = 20, include_closed: bool = False) 
     
     all_events = []
     tags = []
+    existing_slugs = set()
     keyword_lower = keyword.lower()
-    # Create regex pattern for word boundary matching
-    keyword_pattern = re.compile(r'\b' + re.escape(keyword_lower) + r'\b', re.IGNORECASE)
     
-    # First, get results from public-search (most relevant, but limited to ~5)
+    # First, get results from public-search (most relevant)
     try:
         response = requests.get(
             f"{BASE_URL}/public-search",
@@ -49,22 +48,96 @@ def search_markets(keyword: str, limit: int = 20, include_closed: bool = False) 
         )
         response.raise_for_status()
         results = response.json()
-        all_events.extend(results.get('events', []))
+        for event in results.get('events', []):
+            if event.get('slug') not in existing_slugs:
+                all_events.append(event)
+                existing_slugs.add(event.get('slug'))
         tags = results.get('tags', [])
         print(f"  public-search returned {len(results.get('events', []))} events")
     except Exception as e:
         print(f"  public-search failed: {e}")
     
-    # If we need more results, fetch recent events and filter client-side
+    # Second, try the events endpoint with title_contains parameter
     if len(all_events) < limit:
         try:
-            # Fetch more events (the API returns most recent/popular first)
             response = requests.get(
                 f"{BASE_URL}/events",
                 params={
-                    'limit': 200,  # Fetch more to find matches
+                    'title_contains': keyword,
+                    'limit': min(limit * 5, 200),  # Fetch extra to account for filtering
                     'closed': str(include_closed).lower(),
-                    'order': 'volume',  # Order by volume (most active)
+                    'order': 'volume',
+                    'ascending': 'false'
+                },
+                timeout=30
+            )
+            response.raise_for_status()
+            events_data = response.json()
+            added_count = 0
+            for event in events_data:
+                if event.get('slug') in existing_slugs:
+                    continue
+                # Double-check that keyword is actually in title (API filter can be loose)
+                title = (event.get('title') or '').lower()
+                if keyword_lower in title:
+                    all_events.append(event)
+                    existing_slugs.add(event.get('slug'))
+                    added_count += 1
+            print(f"  title_contains returned {len(events_data)} events, {added_count} matched keyword")
+        except Exception as e:
+            print(f"  title_contains search failed: {e}")
+    
+    # Third, search markets endpoint and get their parent events
+    if len(all_events) < limit:
+        try:
+            response = requests.get(
+                f"{BASE_URL}/markets",
+                params={
+                    'limit': 200,
+                    'closed': str(include_closed).lower(),
+                    'order': 'volume',
+                    'ascending': 'false'
+                },
+                timeout=30
+            )
+            response.raise_for_status()
+            markets_data = response.json()
+            
+            # Check if keyword is in market question/title
+            for market in markets_data:
+                question = (market.get('question') or '').lower()
+                group_title = (market.get('groupItemTitle') or '').lower()
+                
+                if keyword_lower in question or keyword_lower in group_title:
+                    # Get the parent event slug
+                    event_slug = market.get('eventSlug')
+                    if event_slug and event_slug not in existing_slugs:
+                        # Fetch the full event
+                        try:
+                            event_resp = requests.get(f"{BASE_URL}/events/slug/{event_slug}", timeout=10)
+                            if event_resp.ok:
+                                event = event_resp.json()
+                                all_events.append(event)
+                                existing_slugs.add(event_slug)
+                        except:
+                            pass
+                        
+                        if len(all_events) >= limit:
+                            break
+            
+            print(f"  Markets search added events, total: {len(all_events)}")
+        except Exception as e:
+            print(f"  markets search failed: {e}")
+    
+    # Fourth, fetch more events and filter client-side with looser matching
+    if len(all_events) < limit:
+        try:
+            response = requests.get(
+                f"{BASE_URL}/events",
+                params={
+                    'limit': 500,  # Fetch more to find matches
+                    'closed': str(include_closed).lower(),
+                    'order': 'volume',
                     'ascending': 'false'
                 },
                 timeout=30
@@ -72,16 +145,16 @@ def search_markets(keyword: str, limit: int = 20, include_closed: bool = False) 
             response.raise_for_status()
             additional_events = response.json()
             
-            # Filter events that contain the keyword in title or description
-            existing_slugs = {e.get('slug') for e in all_events}
+            # Filter events that contain the keyword (case-insensitive substring match)
             for event in additional_events:
                 if event.get('slug') in existing_slugs:
                     continue
                     
-                title = event.get('title') or ''
+                title = (event.get('title') or '').lower()
+                description = (event.get('description') or '').lower()
                 
-                # Check if keyword matches as a whole word in title
-                if keyword_pattern.search(title):
+                # Check if keyword is in title or description (substring match)
+                if keyword_lower in title or keyword_lower in description:
                     all_events.append(event)
                     existing_slugs.add(event.get('slug'))
                     
