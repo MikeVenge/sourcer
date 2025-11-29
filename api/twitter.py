@@ -81,3 +81,4 @@ class handler(BaseHTTPRequestHandler):
             error_response = json.dumps({"error": str(e)})
             self.wfile.write(error_response.encode())
 
+

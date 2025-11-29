@@ -13,15 +13,16 @@ import requests
 import argparse
 import sys
 import json
+import re
 from datetime import datetime
 
 
 BASE_URL = "https://gamma-api.polymarket.com"
 
 
-def search_markets(keyword: str, limit: int = 100, include_closed: bool = False) -> dict:
+def search_markets(keyword: str, limit: int = 20, include_closed: bool = False) -> dict:
     """
-    Search for markets by keyword using the public-search API endpoint.
+    Search for markets by keyword using public-search + client-side filtering.
     
     Args:
         keyword: Search term
@@ -31,30 +32,76 @@ def search_markets(keyword: str, limit: int = 100, include_closed: bool = False)
     Returns:
         Dictionary with matching events and tags
     """
-    print(f"Searching for: '{keyword}'")
+    print(f"Searching for: '{keyword}' (limit: {limit})")
     
-    # Use the public-search endpoint
-    response = requests.get(
-        f"{BASE_URL}/public-search",
-        params={'q': keyword},
-        timeout=30
-    )
-    response.raise_for_status()
-    results = response.json()
+    all_events = []
+    tags = []
+    keyword_lower = keyword.lower()
+    # Create regex pattern for word boundary matching
+    keyword_pattern = re.compile(r'\b' + re.escape(keyword_lower) + r'\b', re.IGNORECASE)
     
-    events = results.get('events', [])
-    tags = results.get('tags', [])
+    # First, get results from public-search (most relevant, but limited to ~5)
+    try:
+        response = requests.get(
+            f"{BASE_URL}/public-search",
+            params={'q': keyword},
+            timeout=30
+        )
+        response.raise_for_status()
+        results = response.json()
+        all_events.extend(results.get('events', []))
+        tags = results.get('tags', [])
+        print(f"  public-search returned {len(results.get('events', []))} events")
+    except Exception as e:
+        print(f"  public-search failed: {e}")
+    
+    # If we need more results, fetch recent events and filter client-side
+    if len(all_events) < limit:
+        try:
+            # Fetch more events (the API returns most recent/popular first)
+            response = requests.get(
+                f"{BASE_URL}/events",
+                params={
+                    'limit': 200,  # Fetch more to find matches
+                    'closed': str(include_closed).lower(),
+                    'order': 'volume',  # Order by volume (most active)
+                    'ascending': 'false'
+                },
+                timeout=30
+            )
+            response.raise_for_status()
+            additional_events = response.json()
+            
+            # Filter events that contain the keyword in title or description
+            existing_slugs = {e.get('slug') for e in all_events}
+            for event in additional_events:
+                if event.get('slug') in existing_slugs:
+                    continue
+                    
+                title = event.get('title') or ''
+                
+                # Check if keyword matches as a whole word in title
+                if keyword_pattern.search(title):
+                    all_events.append(event)
+                    existing_slugs.add(event.get('slug'))
+                    
+                    if len(all_events) >= limit:
+                        break
+                        
+            print(f"  After client-side filtering: {len(all_events)} events")
+        except Exception as e:
+            print(f"  events fetch failed: {e}")
     
     # Filter out closed events if requested
     if not include_closed:
-        events = [e for e in events if not e.get('closed', False)]
+        all_events = [e for e in all_events if not e.get('closed', False)]
     
-    # Limit results
-    events = events[:limit]
+    # Apply limit
+    all_events = all_events[:limit]
     
-    print(f"  Found {len(events)} events, {len(tags)} tags")
+    print(f"  Final: {len(all_events)} events, {len(tags)} tags")
     
-    return {'events': events, 'tags': tags}
+    return {'events': all_events, 'tags': tags}
 
 
 def fetch_event_by_slug(slug: str) -> dict:

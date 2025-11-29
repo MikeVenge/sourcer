@@ -33,21 +33,22 @@ def run_cot_v2(session_id: str, accounts: list, topic: str, timeframe: str, post
     """
     headers = {'Content-Type': 'application/json'}
     
-    # Build the payload with the correct parameters
+    # Build the payload with the correct COT parameter format
+    # Format: $topic:<topic> $timeframe:<timeframe> $post_count:<count> $accounts:<accounts>
+    accounts_str = ' '.join(accounts) if isinstance(accounts, list) else accounts
+    
     payload = {
-        'accounts': accounts,
-        'topic': topic,
-        'timeframe': timeframe,
-        'post_count': post_count
+        'input': f"$topic:{topic} $timeframe:{timeframe} $post_count:{post_count} $accounts:{accounts_str}"
     }
     
     # Step 1: Execute COT
     print(f"Executing COT with session: {session_id}")
     print(f"Parameters:")
-    print(f"  accounts: {accounts}")
+    print(f"  accounts: {accounts_str}")
     print(f"  topic: {topic}")
     print(f"  timeframe: {timeframe}")
     print(f"  post_count: {post_count}")
+    print(f"  Payload: {payload}")
     
     response = requests.post(
         f"{base_url}/api/v2/sessions/run-cot/{session_id}/",
