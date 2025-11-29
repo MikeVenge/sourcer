@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { History, Search, MessageCircle, Trash2, Clock, ChevronDown, ChevronUp } from 'lucide-react'
+import { History, Search, MessageCircle, Trash2, Clock, ChevronDown, ChevronUp, Youtube } from 'lucide-react'
 
 const HISTORY_KEY = 'sourcer_query_history'
 const MAX_HISTORY_ITEMS = 50
@@ -117,6 +117,9 @@ export default function QueryHistory({ onSelectQuery, onClose }) {
       const more = item.query.handles?.length > 3 ? ` +${item.query.handles.length - 3}` : ''
       return `@${handles}${more}`
     }
+    if (item.type === 'youtube') {
+      return item.query.title || item.query.url?.slice(0, 40) || 'YouTube Video'
+    }
     return item.title
   }
 
@@ -192,7 +195,8 @@ export default function QueryHistory({ onSelectQuery, onClose }) {
             {[
               { key: 'all', label: 'All' },
               { key: 'polymarket', label: 'Polymarket', icon: Search },
-              { key: 'twitter', label: 'Twitter', icon: MessageCircle }
+              { key: 'twitter', label: 'Twitter', icon: MessageCircle },
+              { key: 'youtube', label: 'YouTube', icon: Youtube }
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
@@ -263,13 +267,17 @@ export default function QueryHistory({ onSelectQuery, onClose }) {
                     justifyContent: 'center',
                     background: item.type === 'polymarket' 
                       ? 'rgba(139, 92, 246, 0.15)' 
+                      : item.type === 'youtube'
+                      ? 'rgba(255, 0, 0, 0.15)'
                       : 'rgba(0, 212, 255, 0.15)',
                     color: item.type === 'polymarket' 
                       ? '#8b5cf6' 
+                      : item.type === 'youtube'
+                      ? '#ff0000'
                       : '#00d4ff',
                     flexShrink: 0
                   }}>
-                    {item.type === 'polymarket' ? <Search size={14} /> : <MessageCircle size={14} />}
+                    {item.type === 'polymarket' ? <Search size={14} /> : item.type === 'youtube' ? <Youtube size={14} /> : <MessageCircle size={14} />}
                   </div>
 
                   {/* Content */}

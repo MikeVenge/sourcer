@@ -8,6 +8,8 @@ import MarketDetails from './components/MarketDetails'
 import TwitterResults from './components/TwitterResults'
 import QueryHistory from './components/QueryHistory'
 import SavedFiles from './components/SavedFiles'
+import YouTubeInput from './components/YouTubeInput'
+import YouTubeResults from './components/YouTubeResults'
 
 // LocalStorage key for persisting tabs
 const STORAGE_KEY = 'sourcer_tabs'
@@ -114,7 +116,16 @@ function App() {
       addTab('twitter-input', 'Twitter Analysis')
     } else if (source === 'polymarket') {
       addTab('polymarket-search', 'Polymarket Search')
+    } else if (source === 'youtube') {
+      addTab('youtube-input', 'YouTube Transcript')
     }
+  }
+
+  const handleYouTubeSubmit = (url) => {
+    // Extract video ID for tab title
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/)
+    const videoId = match ? match[1] : 'video'
+    addTab('youtube-results', `YT: ${videoId}`, { url, status: 'loading' })
   }
 
   const handleTwitterSubmit = (handles, topic, timeframe) => {
@@ -147,6 +158,15 @@ function App() {
         timeframe: historyItem.query.timeframe || 5,
         status: 'loading' 
       })
+    } else if (historyItem.type === 'youtube') {
+      // Re-run YouTube transcript
+      const url = historyItem.query.url
+      const match = url?.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/)
+      const videoId = match ? match[1] : 'video'
+      addTab('youtube-results', `YT: ${videoId}`, { 
+        url: historyItem.query.url,
+        status: 'loading' 
+      })
     }
   }
 
@@ -166,6 +186,10 @@ function App() {
         return <TwitterInput onSubmit={handleTwitterSubmit} />
       case 'twitter-results':
         return <TwitterResults data={activeTab.data} />
+      case 'youtube-input':
+        return <YouTubeInput onSubmit={handleYouTubeSubmit} />
+      case 'youtube-results':
+        return <YouTubeResults data={activeTab.data} />
       case 'polymarket-search':
         return <PolymarketSearch onSearch={handlePolymarketSearch} />
       case 'polymarket-results':

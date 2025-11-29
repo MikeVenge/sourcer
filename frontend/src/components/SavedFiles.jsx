@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FileText, Download, Trash2, FolderOpen, ChevronDown, ChevronUp, Search, MessageCircle, Calendar } from 'lucide-react'
+import { FileText, Download, Trash2, FolderOpen, ChevronDown, ChevronUp, Search, MessageCircle, Calendar, Youtube } from 'lucide-react'
 
 const SAVED_FILES_KEY = 'sourcer_saved_files'
 const MAX_SAVED_FILES = 100
@@ -115,6 +115,7 @@ export default function SavedFiles() {
     if (filter === 'all') return true
     if (filter === 'polymarket') return file.type?.startsWith('polymarket')
     if (filter === 'twitter') return file.type === 'twitter'
+    if (filter === 'youtube') return file.type === 'youtube'
     return true
   })
 
@@ -133,12 +134,14 @@ export default function SavedFiles() {
   const getTypeIcon = (type) => {
     if (type?.startsWith('polymarket')) return <Search size={14} />
     if (type === 'twitter') return <MessageCircle size={14} />
+    if (type === 'youtube') return <Youtube size={14} />
     return <FileText size={14} />
   }
 
   const getTypeColor = (type) => {
     if (type?.startsWith('polymarket')) return '#8b5cf6'
     if (type === 'twitter') return '#00d4ff'
+    if (type === 'youtube') return '#ff0000'
     return 'var(--text-muted)'
   }
 
@@ -214,7 +217,8 @@ export default function SavedFiles() {
             {[
               { key: 'all', label: 'All' },
               { key: 'polymarket', label: 'Polymarket', icon: Search },
-              { key: 'twitter', label: 'Twitter', icon: MessageCircle }
+              { key: 'twitter', label: 'Twitter', icon: MessageCircle },
+              { key: 'youtube', label: 'YouTube', icon: Youtube }
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}

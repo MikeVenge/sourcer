@@ -372,6 +372,16 @@ body {
   box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
 }
 
+.source-card-compact.youtube:hover {
+  border-color: #ff0000;
+  box-shadow: 0 4px 20px rgba(255, 0, 0, 0.2);
+}
+
+.source-card-compact.youtube .source-icon {
+  background: linear-gradient(135deg, #ff0000, #cc0000);
+  box-shadow: 0 4px 16px rgba(255, 0, 0, 0.3);
+}
+
 .source-card-compact span {
   font-size: 0.95rem;
   font-weight: 600;
@@ -408,6 +418,10 @@ body {
 
 .panel-icon.polymarket {
   background: linear-gradient(135deg, var(--polymarket-purple), #7c3aed);
+}
+
+.panel-icon.youtube {
+  background: linear-gradient(135deg, #ff0000, #cc0000);
 }
 
 .panel-header h2 {
@@ -512,6 +526,14 @@ textarea.form-input {
 
 .submit-btn.purple:hover {
   box-shadow: 0 8px 24px rgba(159, 122, 234, 0.3);
+}
+
+.submit-btn.youtube {
+  background: linear-gradient(135deg, #ff0000, #cc0000);
+}
+
+.submit-btn.youtube:hover {
+  box-shadow: 0 8px 24px rgba(255, 0, 0, 0.3);
 }
 
 /* Results Panel */

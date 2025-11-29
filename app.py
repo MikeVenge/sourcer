@@ -259,6 +259,94 @@ def twitter_post(url: str = Query(..., description="X/Twitter post URL")):
 
 
 # ============================================================================
+# YouTube API
+# ============================================================================
+
+class YouTubeRequest(BaseModel):
+    url: str
+
+def extract_video_id(url: str) -> str:
+    """Extract video ID from various YouTube URL formats."""
+    import re
+    patterns = [
+        r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)',
+        r'^([a-zA-Z0-9_-]{11})$'
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    raise ValueError("Invalid YouTube URL")
+
+@app.post("/youtube/transcript")
+def youtube_transcript(request: YouTubeRequest):
+    """
+    Get transcript for a YouTube video.
+    Returns transcript segments with timestamps.
+    """
+    try:
+        from youtube_transcript_api import YouTubeTranscriptApi
+        from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound
+        import requests
+        
+        video_id = extract_video_id(request.url)
+        
+        # Get transcript
+        try:
+            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            
+            # Try to get manual transcript first, then auto-generated
+            transcript = None
+            for t in transcript_list:
+                if not t.is_generated:
+                    transcript = t.fetch()
+                    break
+            
+            if transcript is None:
+                # Fall back to auto-generated
+                transcript = transcript_list.find_generated_transcript(['en']).fetch()
+                
+        except NoTranscriptFound:
+            # Try any available transcript
+            transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        
+        # Get video info using oEmbed API
+        video_info = {}
+        try:
+            oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
+            resp = requests.get(oembed_url, timeout=10)
+            if resp.ok:
+                oembed = resp.json()
+                video_info = {
+                    "title": oembed.get("title", "Unknown"),
+                    "channel": oembed.get("author_name", "Unknown"),
+                    "thumbnail": oembed.get("thumbnail_url"),
+                    "duration": sum(s.get('duration', 0) for s in transcript) if transcript else 0
+                }
+        except:
+            video_info = {
+                "title": f"Video {video_id}",
+                "channel": "Unknown",
+                "duration": sum(s.get('duration', 0) for s in transcript) if transcript else 0
+            }
+        
+        return {
+            "video_id": video_id,
+            "video_info": video_info,
+            "transcript": transcript
+        }
+        
+    except TranscriptsDisabled:
+        raise HTTPException(status_code=400, detail="Transcripts are disabled for this video")
+    except NoTranscriptFound:
+        raise HTTPException(status_code=404, detail="No transcript found for this video")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching transcript: {str(e)}")
+
+
+# ============================================================================
 # Run with uvicorn
 # ============================================================================
 
