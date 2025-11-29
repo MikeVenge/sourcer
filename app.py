@@ -278,15 +278,59 @@ def extract_video_id(url: str) -> str:
             return match.group(1)
     raise ValueError("Invalid YouTube URL")
 
+import os
+
+# API Keys - Set these as environment variables
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+
+def parse_duration_iso8601(duration: str) -> int:
+    """Parse ISO 8601 duration (PT1H2M3S) to seconds."""
+    import re
+    match = re.match(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?', duration)
+    if not match:
+        return 0
+    hours = int(match.group(1) or 0)
+    minutes = int(match.group(2) or 0)
+    seconds = int(match.group(3) or 0)
+    return hours * 3600 + minutes * 60 + seconds
+
+def parse_caption_track(caption_content: str, format_type: str = "srv3") -> list:
+    """Parse YouTube caption track XML into transcript segments."""
+    import xml.etree.ElementTree as ET
+    import html
+    
+    segments = []
+    try:
+        root = ET.fromstring(caption_content)
+        for text_elem in root.findall('.//text'):
+            start = float(text_elem.get('start', 0))
+            dur = float(text_elem.get('dur', 0))
+            text = text_elem.text or ''
+            # Decode HTML entities
+            text = html.unescape(text)
+            if text.strip():
+                segments.append({
+                    'text': text.strip(),
+                    'start': start,
+                    'duration': dur
+                })
+    except ET.ParseError:
+        pass
+    return segments
+
+
 @app.post("/youtube/transcript")
 def youtube_transcript(request: YouTubeRequest):
     """
     Get transcript for a YouTube video.
-    Returns transcript segments with timestamps.
+    Downloads audio using yt-dlp and transcribes using Gemini.
     """
-    from youtube_transcript_api import YouTubeTranscriptApi
     import urllib.parse as urlparse
     import requests
+    import subprocess
+    import tempfile
+    import os
     
     # Extract video ID from URL
     parsed = urlparse.urlparse(request.url)
@@ -304,7 +348,7 @@ def youtube_transcript(request: YouTubeRequest):
     if not video_id:
         raise HTTPException(status_code=400, detail="Invalid YouTube URL. Could not extract video ID.")
     
-    # Get video info using oEmbed API
+    # Get video info using YouTube Data API v3
     video_info = {
         "title": f"Video {video_id}",
         "channel": "Unknown",
@@ -313,37 +357,173 @@ def youtube_transcript(request: YouTubeRequest):
     }
     
     try:
-        oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
-        resp = requests.get(oembed_url, timeout=10)
-        if resp.ok:
-            oembed = resp.json()
-            video_info["title"] = oembed.get("title", video_info["title"])
-            video_info["channel"] = oembed.get("author_name", video_info["channel"])
-            if oembed.get("thumbnail_url"):
-                video_info["thumbnail"] = oembed.get("thumbnail_url")
-    except Exception:
-        pass  # Keep default video_info
-    
-    # Get transcript using simple API call
-    try:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id)
-        
-        # Calculate duration from transcript
-        video_info["duration"] = sum(s.get('duration', 0) for s in transcript)
-        
-        return {
-            "video_id": video_id,
-            "video_info": video_info,
-            "transcript": transcript
+        api_url = "https://www.googleapis.com/youtube/v3/videos"
+        params = {
+            "part": "snippet,contentDetails",
+            "id": video_id,
+            "key": YOUTUBE_API_KEY
         }
-        
+        resp = requests.get(api_url, params=params, timeout=10)
+        if resp.ok:
+            data = resp.json()
+            if data.get("items"):
+                item = data["items"][0]
+                snippet = item.get("snippet", {})
+                content_details = item.get("contentDetails", {})
+                
+                video_info["title"] = snippet.get("title", video_info["title"])
+                video_info["channel"] = snippet.get("channelTitle", video_info["channel"])
+                
+                thumbnails = snippet.get("thumbnails", {})
+                if thumbnails.get("high"):
+                    video_info["thumbnail"] = thumbnails["high"]["url"]
+                elif thumbnails.get("medium"):
+                    video_info["thumbnail"] = thumbnails["medium"]["url"]
+                
+                duration_str = content_details.get("duration", "PT0S")
+                video_info["duration"] = parse_duration_iso8601(duration_str)
     except Exception as e:
-        error_msg = str(e)
-        if "disabled" in error_msg.lower():
-            raise HTTPException(status_code=400, detail="Transcripts are disabled for this video.")
-        if "no transcript" in error_msg.lower():
-            raise HTTPException(status_code=404, detail="No transcript available for this video.")
-        raise HTTPException(status_code=500, detail=f"Error fetching transcript: {error_msg}")
+        print(f"[YouTube] Error fetching video info: {e}")
+    
+    # Download audio using yt-dlp and transcribe with Gemini
+    transcript = []
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        audio_file = os.path.join(tmpdir, f"{video_id}.mp3")
+        
+        print(f"")
+        print(f"=" * 60)
+        print(f"[YouTube] STEP 1/2: DOWNLOADING AUDIO")
+        print(f"[YouTube] Video ID: {video_id}")
+        print(f"=" * 60)
+        
+        # Download audio only using yt-dlp (low quality for smaller file size)
+        cmd = [
+            "yt-dlp",
+            "-x",  # Extract audio
+            "--audio-format", "mp3",
+            "--audio-quality", "9",  # Lowest quality (smallest file, ~64kbps)
+            "--postprocessor-args", "ffmpeg:-ac 1 -ar 16000",  # Mono, 16kHz (good for speech)
+            "-o", audio_file,
+            "--no-playlist",
+            "--extractor-args", "youtube:player_client=default",
+            f"https://www.youtube.com/watch?v={video_id}"
+        ]
+        
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            
+            if result.returncode != 0:
+                print(f"[YouTube] yt-dlp error: {result.stderr}")
+                raise HTTPException(status_code=500, detail=f"Failed to download audio: {result.stderr[:200]}")
+            
+            # Check if file exists (yt-dlp might add extension)
+            if not os.path.exists(audio_file):
+                # Try with .mp3 already added by yt-dlp
+                possible_files = [f for f in os.listdir(tmpdir) if f.endswith('.mp3')]
+                if possible_files:
+                    audio_file = os.path.join(tmpdir, possible_files[0])
+                else:
+                    raise HTTPException(status_code=500, detail="Audio file not found after download")
+            
+            file_size = os.path.getsize(audio_file)
+            print(f"[YouTube] Downloaded audio: {file_size / 1024 / 1024:.2f} MB")
+            
+            # Transcribe using OpenAI Whisper API
+            print(f"")
+            print(f"=" * 60)
+            print(f"[YouTube] STEP 2/2: TRANSCRIBING WITH AI")
+            print(f"[YouTube] Using OpenAI Whisper API...")
+            print(f"=" * 60)
+            
+            from openai import OpenAI
+            
+            client = OpenAI(api_key=OPENAI_API_KEY)
+            
+            # Use OpenAI's transcription API with retry for transient errors
+            import time
+            max_retries = 3
+            last_error = None
+            response = None
+            
+            for attempt in range(max_retries):
+                try:
+                    with open(audio_file, "rb") as audio:
+                        response = client.audio.transcriptions.create(
+                            model="whisper-1",
+                            file=audio,
+                            response_format="verbose_json"
+                        )
+                    break  # Success
+                except Exception as e:
+                    last_error = e
+                    error_str = str(e)
+                    # Retry on 502, 503, 500 errors (transient server issues)
+                    if "502" in error_str or "503" in error_str or "500" in error_str or "Bad gateway" in error_str:
+                        wait_time = 10 * (attempt + 1)  # 10s, 20s, 30s
+                        print(f"[YouTube] OpenAI API error (attempt {attempt + 1}/{max_retries}), retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                    else:
+                        raise  # Non-transient error, don't retry
+            
+            if response is None:
+                raise last_error or Exception("Failed to transcribe after retries")
+            
+            print(f"")
+            print(f"=" * 60)
+            print(f"[YouTube] ✅ TRANSCRIPTION COMPLETE!")
+            print(f"=" * 60)
+            
+            # Use segments from OpenAI response if available (has timestamps)
+            if hasattr(response, 'segments') and response.segments:
+                print(f"[YouTube] Got {len(response.segments)} segments with timestamps")
+                for seg in response.segments:
+                    transcript.append({
+                        "text": seg.text.strip(),
+                        "start": seg.start,
+                        "duration": seg.end - seg.start
+                    })
+            else:
+                # Fallback: split by sentences
+                transcript_text = response.text.strip() if hasattr(response, 'text') else str(response)
+                print(f"[YouTube] Transcription: {len(transcript_text)} characters")
+                
+                if transcript_text:
+                    # Split into paragraphs as segments
+                    paragraphs = [p.strip() for p in transcript_text.split('\n\n') if p.strip()]
+                    if not paragraphs:
+                        paragraphs = [transcript_text]
+                    
+                    # Estimate timing based on word count (roughly 150 words per minute)
+                    current_time = 0.0
+                    for para in paragraphs:
+                        word_count = len(para.split())
+                        duration = (word_count / 150) * 60  # Convert to seconds
+                        transcript.append({
+                            "text": para,
+                            "start": current_time,
+                            "duration": duration
+                        })
+                        current_time += duration
+            
+        except subprocess.TimeoutExpired:
+            raise HTTPException(status_code=504, detail="Audio download timed out")
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"[YouTube] Error: {e}")
+            import traceback
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Transcription error: {str(e)}")
+    
+    if not transcript:
+        raise HTTPException(status_code=500, detail="Failed to generate transcript")
+    
+    return {
+        "video_id": video_id,
+        "video_info": video_info,
+        "transcript": transcript
+    }
 
 
 # ============================================================================

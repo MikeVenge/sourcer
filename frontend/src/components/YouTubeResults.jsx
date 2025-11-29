@@ -32,13 +32,32 @@ export default function YouTubeResults({ data }) {
   const [copied, setCopied] = useState(false)
   const [apiError, setApiError] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [progressStep, setProgressStep] = useState(0) // 0: starting, 1: downloading, 2: transcribing
+  const [elapsedTime, setElapsedTime] = useState(0)
   const hasLoadedRef = useRef(false)
   const urlRef = useRef('')
+  const timerRef = useRef(null)
 
   const fetchTranscript = async (isRefresh = false) => {
     setLoading(true)
+    setProgressStep(0)
+    setElapsedTime(0)
     if (isRefresh) setRefreshing(true)
     setApiError(null)
+    
+    // Start timer
+    const startTime = Date.now()
+    timerRef.current = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000)
+      setElapsedTime(elapsed)
+      
+      // Simulate progress steps based on time (rough estimates)
+      if (elapsed > 5 && elapsed < 60) {
+        setProgressStep(1) // Downloading
+      } else if (elapsed >= 60) {
+        setProgressStep(2) // Transcribing
+      }
+    }, 1000)
     
     try {
       const response = await fetch(`${API_URL}/youtube/transcript`, {
@@ -74,14 +93,34 @@ export default function YouTubeResults({ data }) {
     } finally {
       setLoading(false)
       setRefreshing(false)
+      setProgressStep(0)
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+      }
     }
   }
+  
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
-    if (!hasLoadedRef.current || urlRef.current !== data.url) {
+    // Only fetch if:
+    // 1. We haven't loaded yet (hasLoadedRef is false), OR
+    // 2. The URL has changed
+    // AND we don't already have transcript data for this URL
+    const shouldFetch = (!hasLoadedRef.current || urlRef.current !== data.url) && !transcript
+    
+    if (shouldFetch) {
       fetchTranscript(false)
     }
-  }, [data])
+  }, [data.url]) // Only depend on URL, not the entire data object
 
   const generateMarkdown = () => {
     let md = `# YouTube Transcript\n\n`
@@ -128,12 +167,84 @@ export default function YouTubeResults({ data }) {
   }
 
   if (loading && !transcript) {
+    const steps = [
+      { label: 'Preparing...', description: 'Getting video information' },
+      { label: 'Downloading Audio', description: 'Extracting audio from YouTube video' },
+      { label: 'Generating Transcript', description: 'Converting speech to text with AI' }
+    ]
+    
+    const currentStep = steps[progressStep] || steps[0]
+    const formatTime = (seconds) => {
+      const mins = Math.floor(seconds / 60)
+      const secs = seconds % 60
+      return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`
+    }
+    
     return (
-      <div className="loading-container">
+      <div className="loading-container" style={{ padding: '3rem' }}>
         <div className="loading-spinner" />
-        <div className="loading-text">Fetching transcript...</div>
+        <div className="loading-text" style={{ marginTop: '1.5rem' }}>{currentStep.label}</div>
         <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-          This may take a few seconds
+          {currentStep.description}
+        </div>
+        
+        {/* Progress Steps */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '0.5rem', 
+          marginTop: '2rem',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          {steps.map((step, idx) => (
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                background: idx <= progressStep ? 'var(--accent-cyan)' : 'var(--bg-tertiary)',
+                color: idx <= progressStep ? 'var(--bg-primary)' : 'var(--text-muted)',
+                transition: 'all 0.3s ease'
+              }}>
+                {idx < progressStep ? '✓' : idx + 1}
+              </div>
+              {idx < steps.length - 1 && (
+                <div style={{
+                  width: '40px',
+                  height: '2px',
+                  background: idx < progressStep ? 'var(--accent-cyan)' : 'var(--bg-tertiary)',
+                  transition: 'all 0.3s ease'
+                }} />
+              )}
+            </div>
+          ))}
+        </div>
+        
+        {/* Timer */}
+        <div style={{ 
+          color: 'var(--text-muted)', 
+          fontSize: '0.8rem', 
+          marginTop: '1.5rem',
+          fontFamily: 'JetBrains Mono, monospace'
+        }}>
+          Elapsed: {formatTime(elapsedTime)}
+        </div>
+        
+        <div style={{ 
+          color: 'var(--accent-yellow)', 
+          fontSize: '0.85rem', 
+          marginTop: '1rem',
+          padding: '0.75rem 1rem',
+          background: 'rgba(255, 193, 7, 0.1)',
+          borderRadius: '8px',
+          maxWidth: '400px'
+        }}>
+          ⏱️ This process typically takes 2-5 minutes depending on video length
         </div>
       </div>
     )
