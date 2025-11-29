@@ -1,0 +1,10 @@
+# Ignore Python backend (deploy to Railway instead)
+api/
+app.py
+lib/
+*.py
+requirements.txt
+Procfile
+examples/
+docs/
+
