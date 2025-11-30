@@ -45,14 +45,17 @@ const extractPriceFromName = (name) => {
   return value
 }
 
-export default function MarketDetails({ data }) {
+export default function MarketDetails({ data, tabId, updateTabData }) {
+  // Check if we have saved details from previous session
+  const hasSavedDetails = data?.details && data.details.outcomes
+  
   const [loading, setLoading] = useState(false)
-  const [details, setDetails] = useState(null)
+  const [details, setDetails] = useState(hasSavedDetails ? data.details : null)
   const [saved, setSaved] = useState(false)
   const [apiError, setApiError] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
-  const hasLoadedRef = useRef(false)
-  const slugRef = useRef('')
+  const hasLoadedRef = useRef(hasSavedDetails) // Mark as loaded if we have saved details
+  const slugRef = useRef(hasSavedDetails ? data.market.slug : '')
 
   const fetchDetails = async (isRefresh = false) => {
     setLoading(true)
@@ -107,7 +110,7 @@ export default function MarketDetails({ data }) {
         .filter(o => o.probability >= 0.005)
         .sort((a, b) => extractPriceFromName(b.name) - extractPriceFromName(a.name))
       
-      setDetails({
+      const fetchedDetails = {
         ...data.market,
         title: eventData.title,
         description: eventData.description,
@@ -120,7 +123,17 @@ export default function MarketDetails({ data }) {
         }) : 'N/A',
         outcomes: filteredOutcomes.length > 0 ? filteredOutcomes : null,
         url: `https://polymarket.com/event/${eventData.slug}`
-      })
+      }
+      
+      setDetails(fetchedDetails)
+      
+      // Save details to tab data for persistence
+      if (tabId && updateTabData) {
+        updateTabData(tabId, {
+          ...data,
+          details: fetchedDetails
+        })
+      }
       
       hasLoadedRef.current = true
       slugRef.current = slug

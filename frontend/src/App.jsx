@@ -185,7 +185,7 @@ function App() {
       case 'twitter-input':
         return <TwitterInput onSubmit={handleTwitterSubmit} />
       case 'twitter-results':
-        return <TwitterResults data={activeTab.data} />
+        return <TwitterResults data={activeTab.data} tabId={activeTab.id} updateTabData={updateTabData} />
       case 'youtube-input':
         return <YouTubeInput onSubmit={handleYouTubeSubmit} />
       case 'youtube-results':
@@ -199,10 +199,13 @@ function App() {
             initialKeyword={activeTab.data?.keyword}
             showResults={true}
             onMarketSelect={handleMarketSelect}
+            tabId={activeTab.id}
+            updateTabData={updateTabData}
+            savedResults={activeTab.data?.results}
           />
         )
       case 'market-details':
-        return <MarketDetails data={activeTab.data} />
+        return <MarketDetails data={activeTab.data} tabId={activeTab.id} updateTabData={updateTabData} />
       default:
         return <div>Unknown tab type</div>
     }

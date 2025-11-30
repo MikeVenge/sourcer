@@ -36,17 +36,7 @@ const formatDate = (dateStr) => {
   }
 }
 
-export default function TwitterResults({ data }) {
-  const [loading, setLoading] = useState(false)
-  const [posts, setPosts] = useState([])
-  const [errors, setErrors] = useState([])
-  const [processingStatus, setProcessingStatus] = useState('')
-  const [saved, setSaved] = useState(false)
-  const [apiError, setApiError] = useState(null)
-  const [refreshing, setRefreshing] = useState(false)
-  const hasLoadedRef = useRef(false)
-  const dataKeyRef = useRef('')
-
+export default function TwitterResults({ data, tabId, updateTabData }) {
   // Generate a key to identify the data request
   const getDataKey = () => {
     return JSON.stringify({
@@ -55,6 +45,19 @@ export default function TwitterResults({ data }) {
       timeframe: data.timeframe
     })
   }
+
+  // Check if we have saved results from previous session
+  const hasSavedResults = data?.results && data.results.posts && data.results.posts.length > 0
+  
+  const [loading, setLoading] = useState(false)
+  const [posts, setPosts] = useState(hasSavedResults ? data.results.posts : [])
+  const [errors, setErrors] = useState(hasSavedResults ? data.results.errors : [])
+  const [processingStatus, setProcessingStatus] = useState('')
+  const [saved, setSaved] = useState(false)
+  const [apiError, setApiError] = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const hasLoadedRef = useRef(hasSavedResults) // Mark as loaded if we have saved results
+  const dataKeyRef = useRef(hasSavedResults ? getDataKey() : '')
 
   const analyzeTwitter = async (isRefresh = false) => {
     setLoading(true)
@@ -83,10 +86,23 @@ export default function TwitterResults({ data }) {
       const result = await response.json()
       
       // Posts are already sorted by views from the backend
-      setPosts(result.posts || [])
-      setErrors(result.errors || [])
+      const fetchedPosts = result.posts || []
+      const fetchedErrors = result.errors || []
+      setPosts(fetchedPosts)
+      setErrors(fetchedErrors)
       hasLoadedRef.current = true
       dataKeyRef.current = getDataKey()
+      
+      // Save results to tab data for persistence
+      if (tabId && updateTabData) {
+        updateTabData(tabId, {
+          ...data,
+          results: {
+            posts: fetchedPosts,
+            errors: fetchedErrors
+          }
+        })
+      }
       
       // Save to query history (only on initial load, not refresh)
       if (!isRefresh) {

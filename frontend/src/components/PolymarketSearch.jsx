@@ -18,15 +18,17 @@ const formatVolume = (volume) => {
   return `$${num.toFixed(0)}`
 }
 
-export default function PolymarketSearch({ onSearch, initialKeyword, showResults, onMarketSelect }) {
+export default function PolymarketSearch({ onSearch, initialKeyword, showResults, onMarketSelect, tabId, updateTabData, savedResults }) {
   const [keyword, setKeyword] = useState(initialKeyword || '')
-  const [results, setResults] = useState(null)
+  // Check if we have saved results from previous session
+  const hasSavedResults = savedResults && savedResults.length > 0
+  const [results, setResults] = useState(hasSavedResults ? savedResults : null)
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [apiError, setApiError] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
-  const hasLoadedRef = useRef(false)
-  const keywordRef = useRef('')
+  const hasLoadedRef = useRef(hasSavedResults) // Mark as loaded if we have saved results
+  const keywordRef = useRef(initialKeyword || '')
 
   useEffect(() => {
     // Only fetch if we haven't loaded yet OR if the keyword has changed
@@ -71,6 +73,14 @@ export default function PolymarketSearch({ onSearch, initialKeyword, showResults
       setResults(events)
       hasLoadedRef.current = true
       keywordRef.current = searchKeyword
+      
+      // Save results to tab data for persistence
+      if (tabId && updateTabData) {
+        updateTabData(tabId, {
+          keyword: searchKeyword,
+          results: events
+        })
+      }
       
       // Save to query history (only on initial load, not refresh)
       if (!isRefresh) {
