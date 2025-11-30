@@ -3,7 +3,7 @@ import { BookOpen, Check, AlertCircle, Loader2 } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-export default function NotebookLMExport({ content, sourceName, contentType = 'text', url = null }) {
+export default function NotebookLMExport({ content, sourceName, sourceType, contentType = 'text', url = null }) {
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -22,6 +22,7 @@ export default function NotebookLMExport({ content, sourceName, contentType = 't
         body: JSON.stringify({
           source_name: sourceName,
           content: content,
+          source_type: sourceType,
           content_type: contentType,
           url: url
         })

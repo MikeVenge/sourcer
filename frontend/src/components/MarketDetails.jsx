@@ -241,6 +241,7 @@ export default function MarketDetails({ data }) {
               <NotebookLMExport 
                 content={generateMarketDetailsMarkdown(details).content}
                 sourceName={`Polymarket: ${details.title}`}
+                sourceType="polymarket"
               />
             )}
             <a 

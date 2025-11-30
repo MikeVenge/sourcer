@@ -288,8 +288,14 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 NOTEBOOKLM_PROJECT_NUMBER = os.getenv("NOTEBOOKLM_PROJECT_NUMBER", "511538466121")
 NOTEBOOKLM_LOCATION = os.getenv("NOTEBOOKLM_LOCATION", "global")
 NOTEBOOKLM_ENDPOINT_LOCATION = os.getenv("NOTEBOOKLM_ENDPOINT_LOCATION", "global-")
-NOTEBOOKLM_NOTEBOOK_ID = os.getenv("NOTEBOOKLM_NOTEBOOK_ID", "67f739c7-e891-41c6-a0a1-9fc4708d1de7")
 NOTEBOOKLM_SERVICE_ACCOUNT = os.getenv("NOTEBOOKLM_SERVICE_ACCOUNT", "notebooklm@graphic-charter-467314-n9.iam.gserviceaccount.com")
+
+# Notebook IDs by content type
+NOTEBOOKLM_NOTEBOOK_IDS = {
+    "polymarket": "67f739c7-e891-41c6-a0a1-9fc4708d1de7",
+    "twitter": "823b748e-e688-4570-bc1c-d769c87f0ec2",
+    "youtube": "0d48bb2e-6d37-429b-9c71-46229ea9fe33"
+}
 
 def parse_duration_iso8601(duration: str) -> int:
     """Parse ISO 8601 duration (PT1H2M3S) to seconds."""
@@ -540,6 +546,7 @@ def youtube_transcript(request: YouTubeRequest):
 class NotebookLMRequest(BaseModel):
     source_name: str
     content: str
+    source_type: str  # "polymarket", "twitter", or "youtube"
     content_type: str = "text"  # "text", "web", or "youtube"
     url: Optional[str] = None  # For web or youtube content
 
@@ -618,12 +625,20 @@ def notebooklm_add_source(request: NotebookLMRequest):
                    "GOOGLE_SERVICE_ACCOUNT_JSON (JSON string) environment variable."
         )
     
+    # Get notebook ID based on source type
+    notebook_id = NOTEBOOKLM_NOTEBOOK_IDS.get(request.source_type.lower())
+    if not notebook_id:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown source_type: {request.source_type}. Must be one of: {list(NOTEBOOKLM_NOTEBOOK_IDS.keys())}"
+        )
+    
     # Build the API URL
     api_url = (
         f"https://{NOTEBOOKLM_ENDPOINT_LOCATION}discoveryengine.googleapis.com"
         f"/v1alpha/projects/{NOTEBOOKLM_PROJECT_NUMBER}"
         f"/locations/{NOTEBOOKLM_LOCATION}"
-        f"/notebooks/{NOTEBOOKLM_NOTEBOOK_ID}/sources:batchCreate"
+        f"/notebooks/{notebook_id}/sources:batchCreate"
     )
     
     headers = {
@@ -663,7 +678,8 @@ def notebooklm_add_source(request: NotebookLMRequest):
         "userContents": [user_content]
     }
     
-    print(f"[NotebookLM] Adding source to notebook: {NOTEBOOKLM_NOTEBOOK_ID}")
+    print(f"[NotebookLM] Adding source to notebook: {notebook_id}")
+    print(f"[NotebookLM] Source type: {request.source_type}")
     print(f"[NotebookLM] Content type: {request.content_type}")
     print(f"[NotebookLM] Source name: {request.source_name}")
     print(f"[NotebookLM] API URL: {api_url}")

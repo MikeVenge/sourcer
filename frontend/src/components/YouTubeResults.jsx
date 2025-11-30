@@ -337,6 +337,7 @@ export default function YouTubeResults({ data }) {
               <NotebookLMExport 
                 content={transcript.map(s => s.text).join('\n\n')}
                 sourceName={`YouTube: ${videoInfo?.title || 'Video'}`}
+                sourceType="youtube"
                 contentType="youtube"
                 url={data.url}
               />

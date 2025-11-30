@@ -211,6 +211,7 @@ export default function TwitterResults({ data }) {
             <NotebookLMExport 
               content={generateTwitterMarkdown(data, posts).content}
               sourceName={`Twitter: ${data.topic}`}
+              sourceType="twitter"
             />
           )}
         </div>
