@@ -48,11 +48,12 @@ export default function NotebookLMExport({ content, sourceName, contentType = 't
   if (!isOpen) {
     return (
       <button 
-        className="save-btn notebooklm-btn"
+        className="save-btn"
         onClick={() => setIsOpen(true)}
         title="Export to NotebookLM"
       >
         <BookOpen size={16} />
+        Save LM
       </button>
     )
   }

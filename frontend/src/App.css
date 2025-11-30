@@ -833,16 +833,6 @@ textarea.form-input {
 }
 
 /* NotebookLM Export Modal */
-.notebooklm-btn {
-  background: rgba(234, 179, 8, 0.1) !important;
-  border-color: #eab308 !important;
-  color: #eab308 !important;
-}
-
-.notebooklm-btn:hover {
-  background: rgba(234, 179, 8, 0.2) !important;
-}
-
 .notebooklm-modal-overlay {
   position: fixed;
   top: 0;
@@ -872,7 +862,6 @@ textarea.form-input {
   gap: 0.75rem;
   padding: 1.5rem;
   border-bottom: 1px solid var(--border-color);
-  color: #eab308;
 }
 
 .notebooklm-modal-header h3 {
