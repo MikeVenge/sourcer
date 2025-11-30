@@ -239,7 +239,7 @@ export default function MarketDetails({ data }) {
             </button>
             {details && (
               <NotebookLMExport 
-                content={generateMarketDetailsMarkdown(details, outcomes).content}
+                content={generateMarketDetailsMarkdown(details).content}
                 sourceName={`Polymarket: ${details.title}`}
               />
             )}

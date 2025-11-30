@@ -209,7 +209,7 @@ export default function TwitterResults({ data }) {
           </button>
           {posts.length > 0 && (
             <NotebookLMExport 
-              content={generateTwitterMarkdown(data.topic, data.handles, data.timeframe, posts).content}
+              content={generateTwitterMarkdown(data, posts).content}
               sourceName={`Twitter: ${data.topic}`}
             />
           )}
