@@ -666,9 +666,11 @@ def notebooklm_add_source(request: NotebookLMRequest):
     elif request.content_type == "youtube":
         if not request.url:
             raise HTTPException(status_code=400, detail="URL required for YouTube content")
+        # NotebookLM handles YouTube URLs as webContent - it will automatically detect and process YouTube videos
         user_content = {
-            "videoContent": {
-                "url": request.url
+            "webContent": {
+                "url": request.url,
+                "sourceName": request.source_name
             }
         }
     else:
