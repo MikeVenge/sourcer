@@ -284,6 +284,11 @@ import os
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
+# NotebookLM Configuration
+NOTEBOOKLM_PROJECT_NUMBER = os.getenv("NOTEBOOKLM_PROJECT_NUMBER", "")
+NOTEBOOKLM_LOCATION = os.getenv("NOTEBOOKLM_LOCATION", "global")
+NOTEBOOKLM_ENDPOINT_LOCATION = os.getenv("NOTEBOOKLM_ENDPOINT_LOCATION", "global-")
+
 def parse_duration_iso8601(duration: str) -> int:
     """Parse ISO 8601 duration (PT1H2M3S) to seconds."""
     import re
@@ -523,6 +528,125 @@ def youtube_transcript(request: YouTubeRequest):
         "video_id": video_id,
         "video_info": video_info,
         "transcript": transcript
+    }
+
+
+# ============================================================================
+# NotebookLM API
+# ============================================================================
+
+class NotebookLMRequest(BaseModel):
+    notebook_id: str
+    source_name: str
+    content: str
+    content_type: str = "text"  # "text", "web", or "youtube"
+    url: Optional[str] = None  # For web or youtube content
+    access_token: str  # Google Cloud access token
+
+
+@app.post("/notebooklm/add-source")
+def notebooklm_add_source(request: NotebookLMRequest):
+    """
+    Add a source to a NotebookLM notebook.
+    
+    Supports:
+    - Text content (raw text)
+    - Web content (URL)
+    - YouTube video (URL)
+    
+    Requires Google Cloud access token with appropriate permissions.
+    """
+    import requests
+    
+    if not NOTEBOOKLM_PROJECT_NUMBER:
+        raise HTTPException(
+            status_code=500, 
+            detail="NotebookLM not configured. Set NOTEBOOKLM_PROJECT_NUMBER environment variable."
+        )
+    
+    # Build the API URL
+    api_url = (
+        f"https://{NOTEBOOKLM_ENDPOINT_LOCATION}discoveryengine.googleapis.com"
+        f"/v1alpha/projects/{NOTEBOOKLM_PROJECT_NUMBER}"
+        f"/locations/{NOTEBOOKLM_LOCATION}"
+        f"/notebooks/{request.notebook_id}/sources:batchCreate"
+    )
+    
+    headers = {
+        "Authorization": f"Bearer {request.access_token}",
+        "Content-Type": "application/json"
+    }
+    
+    # Build the content based on type
+    if request.content_type == "text":
+        user_content = {
+            "textContent": {
+                "sourceName": request.source_name,
+                "content": request.content
+            }
+        }
+    elif request.content_type == "web":
+        if not request.url:
+            raise HTTPException(status_code=400, detail="URL required for web content")
+        user_content = {
+            "webContent": {
+                "url": request.url,
+                "sourceName": request.source_name
+            }
+        }
+    elif request.content_type == "youtube":
+        if not request.url:
+            raise HTTPException(status_code=400, detail="URL required for YouTube content")
+        user_content = {
+            "videoContent": {
+                "url": request.url
+            }
+        }
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown content type: {request.content_type}")
+    
+    payload = {
+        "userContents": [user_content]
+    }
+    
+    print(f"[NotebookLM] Adding source to notebook: {request.notebook_id}")
+    print(f"[NotebookLM] Content type: {request.content_type}")
+    print(f"[NotebookLM] API URL: {api_url}")
+    
+    try:
+        response = requests.post(api_url, headers=headers, json=payload, timeout=60)
+        
+        if response.status_code == 200:
+            result = response.json()
+            print(f"[NotebookLM] Success! Source added.")
+            return {
+                "success": True,
+                "message": "Source added to NotebookLM",
+                "source": result
+            }
+        else:
+            error_detail = response.text[:500]
+            print(f"[NotebookLM] Error: {response.status_code} - {error_detail}")
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"NotebookLM API error: {error_detail}"
+            )
+            
+    except requests.exceptions.RequestException as e:
+        print(f"[NotebookLM] Request error: {e}")
+        raise HTTPException(status_code=500, detail=f"Request failed: {str(e)}")
+
+
+@app.get("/notebooklm/config")
+def notebooklm_config():
+    """
+    Get NotebookLM configuration status.
+    """
+    return {
+        "configured": bool(NOTEBOOKLM_PROJECT_NUMBER),
+        "project_number": NOTEBOOKLM_PROJECT_NUMBER[:4] + "..." if NOTEBOOKLM_PROJECT_NUMBER else None,
+        "location": NOTEBOOKLM_LOCATION,
+        "endpoint_location": NOTEBOOKLM_ENDPOINT_LOCATION
     }
 
 

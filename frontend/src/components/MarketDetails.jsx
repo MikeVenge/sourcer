@@ -3,6 +3,7 @@ import { TrendingUp, ExternalLink, Download, Check, AlertCircle, Calendar, Dolla
 import { generateMarketDetailsMarkdown, downloadMarkdown } from '../utils/exportMarkdown'
 import DistributionChart from './DistributionChart'
 import PriceHistoryChart from './PriceHistoryChart'
+import NotebookLMExport from './NotebookLMExport'
 
 // Backend API URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -236,6 +237,12 @@ export default function MarketDetails({ data }) {
               {saved ? <Check size={16} /> : <Download size={16} />}
               {saved ? 'Saved!' : 'Save MD'}
             </button>
+            {details && (
+              <NotebookLMExport 
+                content={generateMarketDetailsMarkdown(details, outcomes).content}
+                sourceName={`Polymarket: ${details.title}`}
+              />
+            )}
             <a 
               href={details?.url}
               target="_blank"
