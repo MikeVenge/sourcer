@@ -570,20 +570,34 @@ def notebooklm_add_source(request: NotebookLMRequest):
         from google.auth.transport.requests import Request
         import json
         
-        # Try to get credentials from environment variable JSON first
-        service_account_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
-        if service_account_json:
-            # Parse JSON string from environment variable
-            try:
-                sa_info = json.loads(service_account_json)
-                credentials = service_account.Credentials.from_service_account_info(
-                    sa_info,
-                    scopes=['https://www.googleapis.com/auth/cloud-platform']
-                )
-            except json.JSONDecodeError:
-                raise ValueError("GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON")
-        else:
-            # Fall back to default (file path or GCP metadata)
+        credentials = None
+        
+        # Method 1: Try file path (GOOGLE_APPLICATION_CREDENTIALS)
+        creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        if creds_path and os.path.exists(creds_path):
+            print(f"[NotebookLM] Using credentials file: {creds_path}")
+            credentials = service_account.Credentials.from_service_account_file(
+                creds_path,
+                scopes=['https://www.googleapis.com/auth/cloud-platform']
+            )
+        
+        # Method 2: Try JSON string from environment variable
+        if not credentials:
+            service_account_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+            if service_account_json:
+                print(f"[NotebookLM] Using credentials from GOOGLE_SERVICE_ACCOUNT_JSON")
+                try:
+                    sa_info = json.loads(service_account_json)
+                    credentials = service_account.Credentials.from_service_account_info(
+                        sa_info,
+                        scopes=['https://www.googleapis.com/auth/cloud-platform']
+                    )
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON: {e}")
+        
+        # Method 3: Fall back to default (GCP metadata service)
+        if not credentials:
+            print(f"[NotebookLM] Using default credentials (GCP metadata)")
             from google.auth import default
             credentials, project = default(scopes=['https://www.googleapis.com/auth/cloud-platform'])
         
@@ -595,10 +609,13 @@ def notebooklm_add_source(request: NotebookLMRequest):
         
     except Exception as e:
         print(f"[NotebookLM] Error getting service account token: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
             detail=f"Failed to authenticate with service account: {str(e)}. "
-                   "Set GOOGLE_SERVICE_ACCOUNT_JSON environment variable with service account JSON."
+                   "Set GOOGLE_APPLICATION_CREDENTIALS (file path) or "
+                   "GOOGLE_SERVICE_ACCOUNT_JSON (JSON string) environment variable."
         )
     
     # Build the API URL

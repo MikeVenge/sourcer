@@ -30,3 +30,8 @@ node_modules/
 # Local output (optional - large files)
 # examples/output/*.json
 
+# Service account keys (sensitive)
+*-*.json
+*service-account*.json
+*credentials*.json
+
