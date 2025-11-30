@@ -5,18 +5,11 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 export default function NotebookLMExport({ content, sourceName, contentType = 'text', url = null }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [notebookId, setNotebookId] = useState('')
-  const [accessToken, setAccessToken] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState(null)
 
   const handleExport = async () => {
-    if (!notebookId.trim() || !accessToken.trim()) {
-      setError('Please enter both Notebook ID and Access Token')
-      return
-    }
-
     setLoading(true)
     setError(null)
 
@@ -27,12 +20,10 @@ export default function NotebookLMExport({ content, sourceName, contentType = 't
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          notebook_id: notebookId,
           source_name: sourceName,
           content: content,
           content_type: contentType,
-          url: url,
-          access_token: accessToken
+          url: url
         })
       })
 
@@ -80,30 +71,15 @@ export default function NotebookLMExport({ content, sourceName, contentType = 't
           </p>
 
           <div className="form-group">
-            <label>Notebook ID</label>
+            <label>Source Name</label>
             <input
               type="text"
               className="form-input"
-              placeholder="Enter your NotebookLM notebook ID"
-              value={notebookId}
-              onChange={(e) => setNotebookId(e.target.value)}
+              value={sourceName}
+              readOnly
             />
             <p className="form-hint">
-              Find this in your NotebookLM URL: notebooklm.google.com/notebook/NOTEBOOK_ID
-            </p>
-          </div>
-
-          <div className="form-group">
-            <label>Google Cloud Access Token</label>
-            <input
-              type="password"
-              className="form-input"
-              placeholder="Paste your access token"
-              value={accessToken}
-              onChange={(e) => setAccessToken(e.target.value)}
-            />
-            <p className="form-hint">
-              Get token via: <code>gcloud auth print-access-token</code>
+              This will be the name of the source in NotebookLM
             </p>
           </div>
 

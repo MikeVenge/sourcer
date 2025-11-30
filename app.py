@@ -285,9 +285,11 @@ YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
 # NotebookLM Configuration
-NOTEBOOKLM_PROJECT_NUMBER = os.getenv("NOTEBOOKLM_PROJECT_NUMBER", "graphic-charter-467314-n9")
+NOTEBOOKLM_PROJECT_NUMBER = os.getenv("NOTEBOOKLM_PROJECT_NUMBER", "511538466121")
 NOTEBOOKLM_LOCATION = os.getenv("NOTEBOOKLM_LOCATION", "global")
 NOTEBOOKLM_ENDPOINT_LOCATION = os.getenv("NOTEBOOKLM_ENDPOINT_LOCATION", "global-")
+NOTEBOOKLM_NOTEBOOK_ID = os.getenv("NOTEBOOKLM_NOTEBOOK_ID", "67f739c7-e891-41c6-a0a1-9fc4708d1de7")
+NOTEBOOKLM_SERVICE_ACCOUNT = os.getenv("NOTEBOOKLM_SERVICE_ACCOUNT", "notebooklm@graphic-charter-467314-n9.iam.gserviceaccount.com")
 
 def parse_duration_iso8601(duration: str) -> int:
     """Parse ISO 8601 duration (PT1H2M3S) to seconds."""
@@ -536,12 +538,10 @@ def youtube_transcript(request: YouTubeRequest):
 # ============================================================================
 
 class NotebookLMRequest(BaseModel):
-    notebook_id: str
     source_name: str
     content: str
     content_type: str = "text"  # "text", "web", or "youtube"
     url: Optional[str] = None  # For web or youtube content
-    access_token: str  # Google Cloud access token
 
 
 @app.post("/notebooklm/add-source")
@@ -554,7 +554,7 @@ def notebooklm_add_source(request: NotebookLMRequest):
     - Web content (URL)
     - YouTube video (URL)
     
-    Requires Google Cloud access token with appropriate permissions.
+    Uses service account authentication.
     """
     import requests
     
@@ -564,16 +564,38 @@ def notebooklm_add_source(request: NotebookLMRequest):
             detail="NotebookLM not configured. Set NOTEBOOKLM_PROJECT_NUMBER environment variable."
         )
     
+    # Get access token from service account
+    try:
+        from google.auth import default
+        from google.auth.transport.requests import Request
+        
+        # Try to get credentials (works if GOOGLE_APPLICATION_CREDENTIALS is set)
+        credentials, project = default(scopes=['https://www.googleapis.com/auth/cloud-platform'])
+        
+        # Refresh token if needed
+        if not credentials.valid:
+            credentials.refresh(Request())
+        
+        access_token = credentials.token
+        
+    except Exception as e:
+        print(f"[NotebookLM] Error getting service account token: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to authenticate with service account: {str(e)}. "
+                   "Make sure GOOGLE_APPLICATION_CREDENTIALS is set or running on GCP."
+        )
+    
     # Build the API URL
     api_url = (
         f"https://{NOTEBOOKLM_ENDPOINT_LOCATION}discoveryengine.googleapis.com"
         f"/v1alpha/projects/{NOTEBOOKLM_PROJECT_NUMBER}"
         f"/locations/{NOTEBOOKLM_LOCATION}"
-        f"/notebooks/{request.notebook_id}/sources:batchCreate"
+        f"/notebooks/{NOTEBOOKLM_NOTEBOOK_ID}/sources:batchCreate"
     )
     
     headers = {
-        "Authorization": f"Bearer {request.access_token}",
+        "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
     }
     
@@ -609,8 +631,9 @@ def notebooklm_add_source(request: NotebookLMRequest):
         "userContents": [user_content]
     }
     
-    print(f"[NotebookLM] Adding source to notebook: {request.notebook_id}")
+    print(f"[NotebookLM] Adding source to notebook: {NOTEBOOKLM_NOTEBOOK_ID}")
     print(f"[NotebookLM] Content type: {request.content_type}")
+    print(f"[NotebookLM] Source name: {request.source_name}")
     print(f"[NotebookLM] API URL: {api_url}")
     
     try:
