@@ -1,8 +1,12 @@
-import { useState } from 'react'
-import { Send, Youtube } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Send, Youtube, BookOpen } from 'lucide-react'
+import NotebookLMExport from './NotebookLMExport'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 export default function YouTubeInput({ onSubmit }) {
   const [url, setUrl] = useState('')
+  const [videoTitle, setVideoTitle] = useState('')
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -24,6 +28,27 @@ export default function YouTubeInput({ onSubmit }) {
   }
 
   const videoId = getVideoId(url)
+
+  // Fetch video title for NotebookLM
+  useEffect(() => {
+    if (videoId) {
+      const fetchVideoTitle = async () => {
+        try {
+          const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
+          const response = await fetch(oembedUrl)
+          if (response.ok) {
+            const data = await response.json()
+            setVideoTitle(data.title)
+          }
+        } catch (e) {
+          console.error('Error fetching video title:', e)
+        }
+      }
+      fetchVideoTitle()
+    } else {
+      setVideoTitle('')
+    }
+  }, [videoId])
 
   return (
     <div className="input-panel">
@@ -65,10 +90,21 @@ export default function YouTubeInput({ onSubmit }) {
           </div>
         )}
 
-        <button type="submit" className="submit-btn youtube">
-          <Send size={18} />
-          Get Transcript
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button type="submit" className="submit-btn youtube" style={{ flex: 1 }}>
+            <Send size={18} />
+            Get Transcript
+          </button>
+          {videoId && (
+            <NotebookLMExport 
+              content="" 
+              sourceName={videoTitle || `YouTube Video ${videoId}`}
+              sourceType="youtube"
+              contentType="youtube"
+              url={url.trim()}
+            />
+          )}
+        </div>
       </form>
     </div>
   )
