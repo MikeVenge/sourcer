@@ -566,11 +566,26 @@ def notebooklm_add_source(request: NotebookLMRequest):
     
     # Get access token from service account
     try:
-        from google.auth import default
+        from google.oauth2 import service_account
         from google.auth.transport.requests import Request
+        import json
         
-        # Try to get credentials (works if GOOGLE_APPLICATION_CREDENTIALS is set)
-        credentials, project = default(scopes=['https://www.googleapis.com/auth/cloud-platform'])
+        # Try to get credentials from environment variable JSON first
+        service_account_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+        if service_account_json:
+            # Parse JSON string from environment variable
+            try:
+                sa_info = json.loads(service_account_json)
+                credentials = service_account.Credentials.from_service_account_info(
+                    sa_info,
+                    scopes=['https://www.googleapis.com/auth/cloud-platform']
+                )
+            except json.JSONDecodeError:
+                raise ValueError("GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON")
+        else:
+            # Fall back to default (file path or GCP metadata)
+            from google.auth import default
+            credentials, project = default(scopes=['https://www.googleapis.com/auth/cloud-platform'])
         
         # Refresh token if needed
         if not credentials.valid:
@@ -583,7 +598,7 @@ def notebooklm_add_source(request: NotebookLMRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Failed to authenticate with service account: {str(e)}. "
-                   "Make sure GOOGLE_APPLICATION_CREDENTIALS is set or running on GCP."
+                   "Set GOOGLE_SERVICE_ACCOUNT_JSON environment variable with service account JSON."
         )
     
     # Build the API URL
