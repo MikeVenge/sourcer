@@ -283,6 +283,7 @@ import os
 # API Keys - Set these as environment variables
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+BRIGHTDATA_API_KEY = os.getenv("BRIGHTDATA_API_KEY", "")
 
 # l2m2 Configuration for AI classification
 L2M2_API_URL = os.getenv("L2M2_API_URL", "http://l2m2-production")
@@ -588,14 +589,20 @@ def parse_caption_track(caption_content: str, format_type: str = "srv3") -> list
 @app.post("/youtube/transcript")
 def youtube_transcript(request: YouTubeRequest):
     """
-    Get transcript for a YouTube video.
-    Downloads audio using yt-dlp and transcribes using Gemini.
+    Get transcript for a YouTube video using Bright Data's YouTube API.
+    
+    Uses Bright Data Web Scraper API to fetch video details and transcript.
+    See: https://docs.brightdata.com/api-reference/web-scraper-api/social-media-apis/youtube
     """
     import urllib.parse as urlparse
     import requests
-    import subprocess
-    import tempfile
-    import os
+    import time
+    
+    if not BRIGHTDATA_API_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="Bright Data API not configured. Set BRIGHTDATA_API_KEY environment variable."
+        )
     
     # Extract video ID from URL
     parsed = urlparse.urlparse(request.url)
@@ -613,182 +620,171 @@ def youtube_transcript(request: YouTubeRequest):
     if not video_id:
         raise HTTPException(status_code=400, detail="Invalid YouTube URL. Could not extract video ID.")
     
-    # Get video info using YouTube Data API v3
-    video_info = {
-        "title": f"Video {video_id}",
-        "channel": "Unknown",
-        "thumbnail": f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg",
-        "duration": 0
+    # Normalize the URL for Bright Data
+    video_url = f"https://www.youtube.com/watch?v={video_id}"
+    
+    print(f"")
+    print(f"=" * 60)
+    print(f"[YouTube] FETCHING VIDEO DATA VIA BRIGHT DATA")
+    print(f"[YouTube] Video ID: {video_id}")
+    print(f"[YouTube] URL: {video_url}")
+    print(f"=" * 60)
+        
+    # Step 1: Trigger the Bright Data scraper (async request)
+    trigger_url = "https://api.brightdata.com/datasets/v3/trigger"
+    
+    headers = {
+        "Authorization": f"Bearer {BRIGHTDATA_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    # Use the YouTube Posts dataset for video details + transcript
+    payload = {
+        "dataset_id": "gd_lk5ns7kz21pck8jpis",  # YouTube Posts dataset
+        "include_errors": True,
+        "data": [
+            {"url": video_url}
+        ]
     }
     
     try:
-        api_url = "https://www.googleapis.com/youtube/v3/videos"
-        params = {
-            "part": "snippet,contentDetails",
-            "id": video_id,
-            "key": YOUTUBE_API_KEY
-        }
-        resp = requests.get(api_url, params=params, timeout=10)
-        if resp.ok:
-            data = resp.json()
-            if data.get("items"):
-                item = data["items"][0]
-                snippet = item.get("snippet", {})
-                content_details = item.get("contentDetails", {})
+        print(f"[YouTube] Triggering Bright Data scraper...")
+        trigger_response = requests.post(trigger_url, headers=headers, json=payload, timeout=30)
+        
+        if not trigger_response.ok:
+            error_detail = trigger_response.text[:500]
+            print(f"[YouTube] Bright Data trigger error: {trigger_response.status_code} - {error_detail}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Bright Data API error: {error_detail}"
+            )
+        
+        trigger_data = trigger_response.json()
+        snapshot_id = trigger_data.get("snapshot_id")
+        
+        if not snapshot_id:
+            raise HTTPException(status_code=500, detail="No snapshot_id returned from Bright Data")
+        
+        print(f"[YouTube] Snapshot ID: {snapshot_id}")
+        
+        # Step 2: Poll for results
+        progress_url = f"https://api.brightdata.com/datasets/v3/progress/{snapshot_id}"
+        results_url = f"https://api.brightdata.com/datasets/v3/snapshot/{snapshot_id}?format=json"
+        
+        max_attempts = 60  # Wait up to 5 minutes
+        for attempt in range(max_attempts):
+            time.sleep(5)  # Wait 5 seconds between checks
+            
+            progress_response = requests.get(progress_url, headers=headers, timeout=30)
+            if progress_response.ok:
+                progress_data = progress_response.json()
+                status = progress_data.get("status")
+                print(f"[YouTube] Status: {status} (attempt {attempt + 1}/{max_attempts})")
                 
-                video_info["title"] = snippet.get("title", video_info["title"])
-                video_info["channel"] = snippet.get("channelTitle", video_info["channel"])
-                
-                thumbnails = snippet.get("thumbnails", {})
-                if thumbnails.get("high"):
-                    video_info["thumbnail"] = thumbnails["high"]["url"]
-                elif thumbnails.get("medium"):
-                    video_info["thumbnail"] = thumbnails["medium"]["url"]
-                
-                duration_str = content_details.get("duration", "PT0S")
-                video_info["duration"] = parse_duration_iso8601(duration_str)
-    except Exception as e:
-        print(f"[YouTube] Error fetching video info: {e}")
-    
-    # Download audio using yt-dlp and transcribe with Gemini
-    transcript = []
-    
-    with tempfile.TemporaryDirectory() as tmpdir:
-        audio_file = os.path.join(tmpdir, f"{video_id}.mp3")
+                if status == "ready":
+                    break
+                elif status == "failed":
+                    raise HTTPException(status_code=500, detail="Bright Data scraping failed")
+            else:
+                print(f"[YouTube] Progress check failed: {progress_response.status_code}")
+        else:
+            raise HTTPException(status_code=504, detail="Bright Data scraping timed out")
+        
+        # Step 3: Fetch results
+        print(f"[YouTube] Fetching results...")
+        results_response = requests.get(results_url, headers=headers, timeout=60)
+        
+        if not results_response.ok:
+            raise HTTPException(status_code=500, detail=f"Failed to fetch results: {results_response.text[:200]}")
+        
+        results = results_response.json()
+        
+        if not results or len(results) == 0:
+            raise HTTPException(status_code=404, detail="No data returned for this video")
+        
+        video_data = results[0]
         
         print(f"")
         print(f"=" * 60)
-        print(f"[YouTube] STEP 1/2: DOWNLOADING AUDIO")
-        print(f"[YouTube] Video ID: {video_id}")
+        print(f"[YouTube] ✅ DATA FETCHED SUCCESSFULLY!")
         print(f"=" * 60)
+            
+        # Extract video info
+        video_info = {
+            "title": video_data.get("title", f"Video {video_id}"),
+            "channel": video_data.get("youtuber", "Unknown"),
+            "thumbnail": video_data.get("preview_image", f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg"),
+            "duration": video_data.get("video_length", 0),
+            "views": video_data.get("views", 0),
+            "likes": video_data.get("likes", 0),
+            "description": video_data.get("description", ""),
+            "date_posted": video_data.get("date_posted", "")
+        }
         
-        # Download audio only using yt-dlp (low quality for smaller file size)
-        cmd = [
-            "yt-dlp",
-            "-x",  # Extract audio
-            "--audio-format", "mp3",
-            "--audio-quality", "9",  # Lowest quality (smallest file, ~64kbps)
-            "--postprocessor-args", "ffmpeg:-ac 1 -ar 16000",  # Mono, 16kHz (good for speech)
-            "-o", audio_file,
-            "--no-playlist",
-            "--extractor-args", "youtube:player_client=default",
-            f"https://www.youtube.com/watch?v={video_id}"
-        ]
+        print(f"[YouTube] Title: {video_info['title']}")
+        print(f"[YouTube] Channel: {video_info['channel']}")
         
-        try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-            
-            if result.returncode != 0:
-                print(f"[YouTube] yt-dlp error: {result.stderr}")
-                raise HTTPException(status_code=500, detail=f"Failed to download audio: {result.stderr[:200]}")
-            
-            # Check if file exists (yt-dlp might add extension)
-            if not os.path.exists(audio_file):
-                # Try with .mp3 already added by yt-dlp
-                possible_files = [f for f in os.listdir(tmpdir) if f.endswith('.mp3')]
-                if possible_files:
-                    audio_file = os.path.join(tmpdir, possible_files[0])
-                else:
-                    raise HTTPException(status_code=500, detail="Audio file not found after download")
-            
-            file_size = os.path.getsize(audio_file)
-            print(f"[YouTube] Downloaded audio: {file_size / 1024 / 1024:.2f} MB")
-            
-            # Transcribe using OpenAI Whisper API
-            print(f"")
-            print(f"=" * 60)
-            print(f"[YouTube] STEP 2/2: TRANSCRIBING WITH AI")
-            print(f"[YouTube] Using OpenAI Whisper API...")
-            print(f"=" * 60)
-            
-            from openai import OpenAI
-            
-            client = OpenAI(api_key=OPENAI_API_KEY)
-            
-            # Use OpenAI's transcription API with retry for transient errors
-            import time
-            max_retries = 3
-            last_error = None
-            response = None
-            
-            for attempt in range(max_retries):
-                try:
-                    with open(audio_file, "rb") as audio:
-                        response = client.audio.transcriptions.create(
-                            model="whisper-1",
-                            file=audio,
-                            response_format="verbose_json"
-                        )
-                    break  # Success
-                except Exception as e:
-                    last_error = e
-                    error_str = str(e)
-                    # Retry on 502, 503, 500 errors (transient server issues)
-                    if "502" in error_str or "503" in error_str or "500" in error_str or "Bad gateway" in error_str:
-                        wait_time = 10 * (attempt + 1)  # 10s, 20s, 30s
-                        print(f"[YouTube] OpenAI API error (attempt {attempt + 1}/{max_retries}), retrying in {wait_time}s...")
-                        time.sleep(wait_time)
-                    else:
-                        raise  # Non-transient error, don't retry
-            
-            if response is None:
-                raise last_error or Exception("Failed to transcribe after retries")
-            
-            print(f"")
-            print(f"=" * 60)
-            print(f"[YouTube] ✅ TRANSCRIPTION COMPLETE!")
-            print(f"=" * 60)
-            
-            # Use segments from OpenAI response if available (has timestamps)
-            if hasattr(response, 'segments') and response.segments:
-                print(f"[YouTube] Got {len(response.segments)} segments with timestamps")
-                for seg in response.segments:
+        # Extract transcript
+        transcript = []
+        
+        # Try formatted_transcript first (usually has timestamps)
+        formatted_transcript = video_data.get("formatted_transcript", [])
+        raw_transcript = video_data.get("transcript", "")
+        
+        if formatted_transcript and isinstance(formatted_transcript, list):
+            print(f"[YouTube] Got {len(formatted_transcript)} transcript segments")
+            for segment in formatted_transcript:
+                if isinstance(segment, dict):
                     transcript.append({
-                        "text": seg.text.strip(),
-                        "start": seg.start,
-                        "duration": seg.end - seg.start
+                        "text": segment.get("text", "").strip(),
+                        "start": segment.get("start", 0),
+                        "duration": segment.get("duration", 0)
                     })
-            else:
-                # Fallback: split by sentences
-                transcript_text = response.text.strip() if hasattr(response, 'text') else str(response)
-                print(f"[YouTube] Transcription: {len(transcript_text)} characters")
-                
-                if transcript_text:
-                    # Split into paragraphs as segments
-                    paragraphs = [p.strip() for p in transcript_text.split('\n\n') if p.strip()]
-                    if not paragraphs:
-                        paragraphs = [transcript_text]
-                    
-                    # Estimate timing based on word count (roughly 150 words per minute)
-                    current_time = 0.0
-                    for para in paragraphs:
-                        word_count = len(para.split())
-                        duration = (word_count / 150) * 60  # Convert to seconds
-                        transcript.append({
-                            "text": para,
-                            "start": current_time,
-                            "duration": duration
-                        })
-                        current_time += duration
+                elif isinstance(segment, str):
+                    transcript.append({
+                        "text": segment.strip(),
+                        "start": 0,
+                        "duration": 0
+                    })
+        elif raw_transcript:
+            # Fallback to raw transcript - split into paragraphs
+            print(f"[YouTube] Using raw transcript ({len(raw_transcript)} chars)")
+            paragraphs = [p.strip() for p in raw_transcript.split('\n\n') if p.strip()]
+            if not paragraphs:
+                paragraphs = [p.strip() for p in raw_transcript.split('\n') if p.strip()]
+            if not paragraphs:
+                paragraphs = [raw_transcript]
             
-        except subprocess.TimeoutExpired:
-            raise HTTPException(status_code=504, detail="Audio download timed out")
-        except HTTPException:
-            raise
-        except Exception as e:
-            print(f"[YouTube] Error: {e}")
-            import traceback
-            traceback.print_exc()
-            raise HTTPException(status_code=500, detail=f"Transcription error: {str(e)}")
-    
-    if not transcript:
-        raise HTTPException(status_code=500, detail="Failed to generate transcript")
-    
-    return {
-        "video_id": video_id,
-        "video_info": video_info,
-        "transcript": transcript
-    }
+            # Estimate timing based on word count (roughly 150 words per minute)
+            current_time = 0.0
+            for para in paragraphs:
+                word_count = len(para.split())
+                duration = (word_count / 150) * 60  # Convert to seconds
+                transcript.append({
+                    "text": para,
+                    "start": current_time,
+                    "duration": duration
+                })
+                current_time += duration
+        else:
+            print(f"[YouTube] ⚠️ No transcript available for this video")
+        
+        return {
+            "video_id": video_id,
+            "video_info": video_info,
+            "transcript": transcript
+        }
+        
+    except HTTPException:
+        raise
+    except requests.exceptions.RequestException as e:
+        print(f"[YouTube] Request error: {e}")
+        raise HTTPException(status_code=500, detail=f"Request failed: {str(e)}")
+    except Exception as e:
+        print(f"[YouTube] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 
 # ============================================================================
@@ -840,7 +836,7 @@ def _get_notebooklm_credentials():
     # Refresh token if needed
     if not credentials.valid:
         credentials.refresh(Request())
-    
+        
     return credentials.token
 
 
