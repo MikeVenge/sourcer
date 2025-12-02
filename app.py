@@ -283,7 +283,7 @@ import os
 # API Keys - Set these as environment variables
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-BRIGHTDATA_API_KEY = os.getenv("BRIGHTDATA_API_KEY", "")
+SEARCHAPI_API_KEY = os.getenv("SEARCHAPI_API_KEY", "uX29PpsVN8nCohWNzmANExdq")
 
 # l2m2 Configuration for AI classification
 L2M2_API_URL = os.getenv("L2M2_API_URL", "http://l2m2-production")
@@ -589,19 +589,16 @@ def parse_caption_track(caption_content: str, format_type: str = "srv3") -> list
 @app.post("/youtube/transcript")
 def youtube_transcript(request: YouTubeRequest):
     """
-    Get transcript for a YouTube video using Bright Data's YouTube API.
-    
-    Uses Bright Data Web Scraper API to fetch video details and transcript.
-    See: https://docs.brightdata.com/api-reference/web-scraper-api/social-media-apis/youtube
+    Get transcript for a YouTube video using SearchAPI.io YouTube Transcripts API.
+    See: https://www.searchapi.io/docs/youtube-transcripts
     """
     import urllib.parse as urlparse
     import requests
-    import time
     
-    if not BRIGHTDATA_API_KEY:
+    if not SEARCHAPI_API_KEY:
         raise HTTPException(
             status_code=500,
-            detail="Bright Data API not configured. Set BRIGHTDATA_API_KEY environment variable."
+            detail="SearchAPI.io API not configured. Set SEARCHAPI_API_KEY environment variable."
         )
     
     # Extract video ID from URL
@@ -609,165 +606,91 @@ def youtube_transcript(request: YouTubeRequest):
     qs = urlparse.parse_qs(parsed.query)
     video_id = qs.get("v", [""])[0]
     
-    # Handle youtu.be short URLs
     if not video_id and "youtu.be" in request.url:
         video_id = parsed.path.strip("/")
     
-    # Handle embed URLs
     if not video_id and "/embed/" in request.url:
         video_id = parsed.path.split("/embed/")[-1].split("?")[0]
     
     if not video_id:
         raise HTTPException(status_code=400, detail="Invalid YouTube URL. Could not extract video ID.")
     
-    # Normalize the URL for Bright Data
     video_url = f"https://www.youtube.com/watch?v={video_id}"
     
     print(f"")
     print(f"=" * 60)
-    print(f"[YouTube] FETCHING VIDEO DATA VIA BRIGHT DATA")
+    print(f"[YouTube] FETCHING TRANSCRIPT VIA SEARCHAPI.IO")
     print(f"[YouTube] Video ID: {video_id}")
     print(f"[YouTube] URL: {video_url}")
     print(f"=" * 60)
-        
-    # Step 1: Trigger the Bright Data scraper (async request)
-    trigger_url = "https://api.brightdata.com/datasets/v3/trigger"
-    
-    headers = {
-        "Authorization": f"Bearer {BRIGHTDATA_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    # Use the YouTube Posts dataset for video details + transcript
-    payload = {
-        "dataset_id": "gd_lk5ns7kz21pck8jpis",  # YouTube Posts dataset
-        "include_errors": True,
-        "data": [
-            {"url": video_url}
-        ]
-    }
     
     try:
-        print(f"[YouTube] Triggering Bright Data scraper...")
-        trigger_response = requests.post(trigger_url, headers=headers, json=payload, timeout=30)
+        # Call SearchAPI.io YouTube Transcripts API
+        api_url = "https://www.searchapi.io/api/v1/search"
+        params = {
+            "engine": "youtube_transcripts",
+            "video_id": video_id,
+            "api_key": SEARCHAPI_API_KEY,
+            "lang": "en"  # Default to English, can be made configurable
+        }
         
-        if not trigger_response.ok:
-            error_detail = trigger_response.text[:500]
-            print(f"[YouTube] Bright Data trigger error: {trigger_response.status_code} - {error_detail}")
+        print(f"[YouTube] Calling SearchAPI.io...")
+        response = requests.get(api_url, params=params, timeout=30)
+        
+        if not response.ok:
+            error_detail = response.text[:500]
+            print(f"[YouTube] SearchAPI.io error: {response.status_code} - {error_detail}")
             raise HTTPException(
                 status_code=500,
-                detail=f"Bright Data API error: {error_detail}"
+                detail=f"SearchAPI.io error: {error_detail}"
             )
         
-        trigger_data = trigger_response.json()
-        snapshot_id = trigger_data.get("snapshot_id")
+        data = response.json()
         
-        if not snapshot_id:
-            raise HTTPException(status_code=500, detail="No snapshot_id returned from Bright Data")
+        # Check for errors in response
+        if "error" in data:
+            error_msg = data.get("error", "Unknown error")
+            available_languages = data.get("available_languages", [])
+            if available_languages:
+                lang_list = ", ".join([f"{lang['name']} ({lang['lang']})" for lang in available_languages])
+                error_msg += f" Available languages: {lang_list}"
+            raise HTTPException(status_code=400, detail=error_msg)
         
-        print(f"[YouTube] Snapshot ID: {snapshot_id}")
+        # Extract transcript
+        transcripts = data.get("transcripts", [])
         
-        # Step 2: Poll for results
-        progress_url = f"https://api.brightdata.com/datasets/v3/progress/{snapshot_id}"
-        results_url = f"https://api.brightdata.com/datasets/v3/snapshot/{snapshot_id}?format=json"
+        if not transcripts:
+            raise HTTPException(status_code=404, detail="No transcript available for this video")
         
-        max_attempts = 60  # Wait up to 5 minutes
-        for attempt in range(max_attempts):
-            time.sleep(5)  # Wait 5 seconds between checks
-            
-            progress_response = requests.get(progress_url, headers=headers, timeout=30)
-            if progress_response.ok:
-                progress_data = progress_response.json()
-                status = progress_data.get("status")
-                print(f"[YouTube] Status: {status} (attempt {attempt + 1}/{max_attempts})")
-                
-                if status == "ready":
-                    break
-                elif status == "failed":
-                    raise HTTPException(status_code=500, detail="Bright Data scraping failed")
-            else:
-                print(f"[YouTube] Progress check failed: {progress_response.status_code}")
-        else:
-            raise HTTPException(status_code=504, detail="Bright Data scraping timed out")
+        print(f"[YouTube] ✅ Got {len(transcripts)} transcript segments")
         
-        # Step 3: Fetch results
-        print(f"[YouTube] Fetching results...")
-        results_response = requests.get(results_url, headers=headers, timeout=60)
+        # Format transcript to match expected structure
+        transcript = []
+        for segment in transcripts:
+                    transcript.append({
+                "text": segment.get("text", "").strip(),
+                "start": segment.get("start", 0),
+                "duration": segment.get("duration", 0)
+            })
         
-        if not results_response.ok:
-            raise HTTPException(status_code=500, detail=f"Failed to fetch results: {results_response.text[:200]}")
+        # Get video info from metadata if available, otherwise use defaults
+        search_metadata = data.get("search_metadata", {})
+        request_url = search_metadata.get("request_url", video_url)
         
-        results = results_response.json()
-        
-        if not results or len(results) == 0:
-            raise HTTPException(status_code=404, detail="No data returned for this video")
-        
-        video_data = results[0]
-        
-        print(f"")
-        print(f"=" * 60)
-        print(f"[YouTube] ✅ DATA FETCHED SUCCESSFULLY!")
-        print(f"=" * 60)
-            
-        # Extract video info
+        # Basic video info (SearchAPI.io doesn't provide full video metadata)
         video_info = {
-            "title": video_data.get("title", f"Video {video_id}"),
-            "channel": video_data.get("youtuber", "Unknown"),
-            "thumbnail": video_data.get("preview_image", f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg"),
-            "duration": video_data.get("video_length", 0),
-            "views": video_data.get("views", 0),
-            "likes": video_data.get("likes", 0),
-            "description": video_data.get("description", ""),
-            "date_posted": video_data.get("date_posted", "")
+            "title": f"Video {video_id}",  # SearchAPI.io doesn't provide title
+            "channel": "Unknown",  # SearchAPI.io doesn't provide channel
+            "thumbnail": f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg",
+            "duration": 0,  # SearchAPI.io doesn't provide duration
+            "views": 0,  # SearchAPI.io doesn't provide views
+            "likes": 0,  # SearchAPI.io doesn't provide likes
+            "description": "",  # SearchAPI.io doesn't provide description
+            "date_posted": ""  # SearchAPI.io doesn't provide date
         }
         
         print(f"[YouTube] Title: {video_info['title']}")
-        print(f"[YouTube] Channel: {video_info['channel']}")
-        
-        # Extract transcript
-        transcript = []
-        
-        # Try formatted_transcript first (usually has timestamps)
-        formatted_transcript = video_data.get("formatted_transcript", [])
-        raw_transcript = video_data.get("transcript", "")
-        
-        if formatted_transcript and isinstance(formatted_transcript, list):
-            print(f"[YouTube] Got {len(formatted_transcript)} transcript segments")
-            for segment in formatted_transcript:
-                if isinstance(segment, dict):
-                    transcript.append({
-                        "text": segment.get("text", "").strip(),
-                        "start": segment.get("start", 0),
-                        "duration": segment.get("duration", 0)
-                    })
-                elif isinstance(segment, str):
-                    transcript.append({
-                        "text": segment.strip(),
-                        "start": 0,
-                        "duration": 0
-                    })
-        elif raw_transcript:
-            # Fallback to raw transcript - split into paragraphs
-            print(f"[YouTube] Using raw transcript ({len(raw_transcript)} chars)")
-            paragraphs = [p.strip() for p in raw_transcript.split('\n\n') if p.strip()]
-            if not paragraphs:
-                paragraphs = [p.strip() for p in raw_transcript.split('\n') if p.strip()]
-            if not paragraphs:
-                paragraphs = [raw_transcript]
-            
-            # Estimate timing based on word count (roughly 150 words per minute)
-            current_time = 0.0
-            for para in paragraphs:
-                word_count = len(para.split())
-                duration = (word_count / 150) * 60  # Convert to seconds
-                transcript.append({
-                    "text": para,
-                    "start": current_time,
-                    "duration": duration
-                })
-                current_time += duration
-        else:
-            print(f"[YouTube] ⚠️ No transcript available for this video")
+        print(f"[YouTube] Transcript segments: {len(transcript)}")
         
         return {
             "video_id": video_id,
@@ -836,7 +759,7 @@ def _get_notebooklm_credentials():
     # Refresh token if needed
     if not credentials.valid:
         credentials.refresh(Request())
-        
+    
     return credentials.token
 
 

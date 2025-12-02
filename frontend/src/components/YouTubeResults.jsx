@@ -52,22 +52,29 @@ export default function YouTubeResults({ data }) {
       const elapsed = Math.floor((Date.now() - startTime) / 1000)
       setElapsedTime(elapsed)
       
-      // Simulate progress steps based on time (rough estimates)
-      if (elapsed > 5 && elapsed < 60) {
-        setProgressStep(1) // Downloading
-      } else if (elapsed >= 60) {
-        setProgressStep(2) // Transcribing
+      // Simulate progress steps based on time (SearchAPI.io is fast)
+      if (elapsed > 1 && elapsed < 10) {
+        setProgressStep(1) // Fetching
+      } else if (elapsed >= 10) {
+        setProgressStep(2) // Processing
       }
     }, 1000)
     
     try {
+      // Create an AbortController for timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 360000) // 6 minutes timeout
+      
       const response = await fetch(`${API_URL}/youtube/transcript`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: data.url })
+        body: JSON.stringify({ url: data.url }),
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
@@ -90,7 +97,11 @@ export default function YouTubeResults({ data }) {
       
     } catch (error) {
       console.error('YouTube transcript error:', error)
-      setApiError(error.message)
+      if (error.name === 'AbortError') {
+        setApiError('Request timed out. The video transcript is taking longer than expected.')
+      } else {
+        setApiError(error.message)
+      }
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -169,9 +180,9 @@ export default function YouTubeResults({ data }) {
 
   if (loading && !transcript) {
     const steps = [
-      { label: 'Preparing...', description: 'Getting video information' },
-      { label: 'Downloading Audio', description: 'Extracting audio from YouTube video' },
-      { label: 'Generating Transcript', description: 'Converting speech to text with AI' }
+      { label: 'Preparing...', description: 'Sending request to SearchAPI.io' },
+      { label: 'Fetching Transcript', description: 'Retrieving video data and transcript' },
+      { label: 'Processing', description: 'Formatting transcript data' }
     ]
     
     const currentStep = steps[progressStep] || steps[0]
@@ -237,15 +248,15 @@ export default function YouTubeResults({ data }) {
         </div>
         
         <div style={{ 
-          color: 'var(--accent-yellow)', 
+          color: 'var(--accent-cyan)', 
           fontSize: '0.85rem', 
           marginTop: '1rem',
           padding: '0.75rem 1rem',
-          background: 'rgba(255, 193, 7, 0.1)',
+          background: 'rgba(0, 209, 178, 0.1)',
           borderRadius: '8px',
           maxWidth: '400px'
         }}>
-          ⏱️ This process typically takes 2-5 minutes depending on video length
+          ⏱️ Fetching transcript via SearchAPI.io...
         </div>
       </div>
     )
