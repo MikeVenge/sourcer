@@ -4,6 +4,14 @@ import { BookOpen, Check, AlertCircle, Loader2 } from 'lucide-react'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 export default function NotebookLMExport({ content, sourceName, sourceType, contentType = 'text', url = null }) {
+  console.log('[NotebookLMExport] Component rendered with props:', {
+    sourceName,
+    sourceType,
+    contentType,
+    contentLength: content?.length || 0,
+    url
+  })
+  
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -11,13 +19,19 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
   const [availableNotebooks, setAvailableNotebooks] = useState([])
   const [selectedNotebooks, setSelectedNotebooks] = useState([])
   const [loadingNotebooks, setLoadingNotebooks] = useState(false)
+  const [notebooks, setNotebooks] = useState([]) // For showing results after auto-classification
 
-  // Fetch available notebooks when modal opens
+  // Only show notebook selection UI for YouTube
+  const showNotebookSelection = contentType === 'youtube'
+  
+  console.log('[NotebookLMExport] showNotebookSelection:', showNotebookSelection)
+
+  // Fetch available notebooks when modal opens (only for YouTube)
   useEffect(() => {
-    if (isOpen && availableNotebooks.length === 0) {
+    if (isOpen && showNotebookSelection && availableNotebooks.length === 0) {
       fetchAvailableNotebooks()
     }
-  }, [isOpen])
+  }, [isOpen, showNotebookSelection])
 
   const fetchAvailableNotebooks = async () => {
     setLoadingNotebooks(true)
@@ -47,11 +61,14 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
   }
 
   const handleExport = async () => {
-    if (selectedNotebooks.length === 0) {
+    console.log('[NotebookLMExport] handleExport called')
+    // For YouTube, require notebook selection
+    if (showNotebookSelection && selectedNotebooks.length === 0) {
       setError('Please select at least one notebook')
       return
     }
 
+    console.log('[NotebookLMExport] Starting export...')
     setLoading(true)
     setError(null)
 
@@ -85,32 +102,80 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
         }
       }
 
-      const response = await fetch(`${API_URL}/notebooklm/add-source`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          source_name: sourceName,
-          content: contentToSend,
-          source_type: sourceType,
-          content_type: contentType === 'youtube' ? 'text' : contentType, // Send as text when we have transcript
-          url: url,
-          notebook_ids: selectedNotebooks  // Send selected notebook IDs
-        })
+      console.log('[NotebookLMExport] Sending to backend:', {
+        source_name: sourceName,
+        content_length: contentToSend?.length || 0,
+        content_preview: contentToSend?.substring(0, 200) || '(empty)',
+        source_type: sourceType,
+        content_type: contentType === 'youtube' ? 'text' : contentType,
+        url: url,
+        notebook_ids: showNotebookSelection ? selectedNotebooks : undefined
       })
 
+      const requestBody = {
+        source_name: sourceName,
+        content: contentToSend,
+        source_type: sourceType,
+        content_type: contentType === 'youtube' ? 'text' : contentType,
+        url: url,
+        notebook_ids: showNotebookSelection ? selectedNotebooks : undefined
+      }
+      
+      console.log('[NotebookLMExport] Making fetch request to:', `${API_URL}/notebooklm/add-source`)
+      
+      let response
+      try {
+        response = await fetch(`${API_URL}/notebooklm/add-source`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        })
+      } catch (fetchError) {
+        console.error('[NotebookLMExport] Fetch failed:', fetchError)
+        throw new Error(`Network error: ${fetchError.message}. Make sure the backend is running at ${API_URL}`)
+      }
+
+      console.log('[NotebookLMExport] Response status:', response.status)
+      
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.detail || 'Failed to export to NotebookLM')
+        let errorMessage = `Server error: ${response.status}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.detail || errorMessage
+        } catch (e) {
+          // Response might not be JSON
+          const textError = await response.text().catch(() => '')
+          if (textError) errorMessage = textError.substring(0, 200)
+        }
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()
+      
+      console.log('[NotebookLMExport] Response data:', data)
+      
+      // For auto-classified content (Twitter/Polymarket), show which notebooks were selected
+      if (!showNotebookSelection && data.classified_notebooks) {
+        const notebookMapping = data.notebook_mapping || {}
+        const notebookResults = data.classified_notebooks.map(name => ({
+          notebook: name,
+          notebook_id: notebookMapping[name] || null,
+          success: true
+        }))
+        console.log('[NotebookLMExport] Setting notebooks:', notebookResults)
+        setNotebooks(notebookResults)
+      }
+      
       setSuccess(true)
       
-      setTimeout(() => {
-        handleClose()
-      }, 3000)
+      // Don't auto-close for Twitter/Polymarket so user can see the results
+      if (showNotebookSelection) {
+        setTimeout(() => {
+          handleClose()
+        }, 3000)
+      }
 
     } catch (err) {
       setError(err.message)
@@ -124,9 +189,24 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
     setError(null)
     setSuccess(false)
     setSelectedNotebooks([])
+    setNotebooks([])
   }
 
-  if (!isOpen) {
+  // For Twitter/Polymarket, directly export without showing modal
+  const handleClick = () => {
+    console.log('[NotebookLMExport] handleClick called', { showNotebookSelection, loading, success })
+    if (showNotebookSelection) {
+      // YouTube: Show notebook selection modal
+      console.log('[NotebookLMExport] Opening modal for YouTube')
+      setIsOpen(true)
+    } else {
+      // Twitter/Polymarket: Direct export with auto-classification
+      console.log('[NotebookLMExport] Calling handleExport for Twitter/Polymarket')
+      handleExport()
+    }
+  }
+
+  if (!isOpen && showNotebookSelection) {
     return (
       <button 
         className="save-btn"
@@ -136,6 +216,109 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
         <BookOpen size={16} />
         Save LM
       </button>
+    )
+  }
+
+  // For Twitter/Polymarket, show button that directly exports
+  if (!showNotebookSelection) {
+    return (
+      <>
+        <button 
+          className="save-btn"
+          onClick={(e) => {
+            console.log('[NotebookLMExport] Button clicked!', { loading, success, disabled: loading || success })
+            e.preventDefault()
+            e.stopPropagation()
+            handleClick()
+          }}
+          disabled={loading || success}
+          title="Export to NotebookLM (Auto-classified)"
+        >
+          {loading ? (
+            <Loader2 size={16} className="spin" />
+          ) : success ? (
+            <Check size={16} />
+          ) : (
+            <BookOpen size={16} />
+          )}
+          Save LM
+        </button>
+        
+        {/* Loading modal */}
+        {loading && (
+          <div 
+            className="notebooklm-modal-overlay"
+            style={{ cursor: 'wait' }}
+          >
+            <div 
+              className="notebooklm-modal" 
+              style={{ maxWidth: '400px', textAlign: 'center' }}
+            >
+              <div style={{ marginBottom: '1.5rem' }}>
+                <Loader2 size={48} className="spin" style={{ color: 'var(--primary-color)' }} />
+              </div>
+              <h3 style={{ marginBottom: '1rem' }}>Classifying Content...</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.6' }}>
+                Using AI to analyze your content and determine the best investment-theme notebooks.
+                <br />
+                <br />
+                This may take 20-30 seconds.
+              </p>
+            </div>
+          </div>
+        )}
+        
+        {/* Success modal */}
+        {success && notebooks.length > 0 && (
+          <div 
+            className="notebooklm-modal-overlay" 
+            onClick={() => {
+              setSuccess(false)
+              setNotebooks([])
+            }}
+          >
+            <div 
+              className="notebooklm-modal" 
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: '500px' }}
+            >
+              <div className="notebooklm-modal-header">
+                <Check size={24} style={{ color: '#10b981' }} />
+                <h3>Successfully Exported!</h3>
+              </div>
+              <div className="notebooklm-modal-body">
+                <p className="notebooklm-info">
+                  Content was auto-classified and sent to the following notebooks:
+                </p>
+                <ul style={{ margin: '1rem 0', paddingLeft: '1.5rem', listStyleType: 'disc' }}>
+                  {notebooks.map((notebook, index) => (
+                    <li key={index} style={{ marginBottom: '0.5rem', fontSize: '14px' }}>
+                      <strong>{notebook.notebook}</strong>
+                      {notebook.notebook_id && (
+                        <div style={{ fontSize: '11px', color: '#999', fontFamily: 'monospace', marginTop: '2px' }}>
+                          ID: {notebook.notebook_id}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="notebooklm-modal-footer">
+                <button 
+                  className="submit-btn"
+                  onClick={() => {
+                    setSuccess(false)
+                    setNotebooks([])
+                  }}
+                >
+                  <Check size={16} />
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     )
   }
 
@@ -165,9 +348,10 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
             </p>
           </div>
 
-          <div className="form-group">
-            <label>Select Notebooks</label>
-            {loadingNotebooks ? (
+          {showNotebookSelection && (
+            <div className="form-group">
+              <label>Select Notebooks</label>
+              {loadingNotebooks ? (
               <div style={{ padding: '1rem', textAlign: 'center' }}>
                 <Loader2 size={20} className="spin" />
                 <p style={{ marginTop: '0.5rem', fontSize: '14px', color: '#999' }}>Loading notebooks...</p>
@@ -234,6 +418,7 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
               </div>
             )}
           </div>
+          )}
 
           {error && (
             <div className="notebooklm-error">
@@ -249,9 +434,28 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
                 <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
                   Successfully exported to NotebookLM!
                 </div>
-                <div style={{ fontSize: '13px', color: '#999' }}>
-                  Sent to {selectedNotebooks.length} notebook{selectedNotebooks.length > 1 ? 's' : ''}
-                </div>
+                {showNotebookSelection ? (
+                  <div style={{ fontSize: '13px', color: '#999' }}>
+                    Sent to {selectedNotebooks.length} notebook{selectedNotebooks.length > 1 ? 's' : ''}
+                  </div>
+                ) : notebooks.length > 0 ? (
+                  <div style={{ marginTop: '12px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px' }}>
+                      Auto-classified and sent to {notebooks.length} notebook{notebooks.length > 1 ? 's' : ''}:
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', listStyleType: 'disc' }}>
+                      {notebooks.map((notebook, index) => (
+                        <li key={index} style={{ marginBottom: '4px' }}>
+                          {notebook.notebook}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '13px', color: '#999' }}>
+                    Content has been exported
+                  </div>
+                )}
               </div>
             </div>
           )}

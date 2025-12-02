@@ -473,18 +473,22 @@ def classify_content_for_notebooks(content: str) -> list:
     """
     import requests
     import json
+    import hashlib
     
     # Truncate content if too long (keep first ~8000 chars for classification)
     truncated_content = content[:8000] if len(content) > 8000 else content
     
     full_prompt = NOTEBOOK_CLASSIFICATION_PROMPT + truncated_content
     
+    # Create a unique cache key based on content hash to avoid stale cached responses
+    content_hash = hashlib.md5(truncated_content.encode()).hexdigest()[:8]
+    
     data = {
-        "cached": True,
+        "cached": False,  # Disable caching to ensure fresh classification
         "context": {
             "host": "sourcer",
             "local_user": "notebooklm-router",
-            "property": "content-classification"
+            "property": f"content-classification-{content_hash}"
         },
         "models": [
             {
@@ -495,7 +499,7 @@ def classify_content_for_notebooks(content: str) -> list:
         "messages": [
             {
                 "role": "user",
-                "content": full_prompt
+                "content": full_prompt + "\n\nIMPORTANT: Respond ONLY with a JSON array of notebook titles. No other text."
             }
         ],
     }
@@ -881,9 +885,15 @@ def notebooklm_add_source(request: NotebookLMRequest):
     Uses service account authentication.
     """
     import requests as req_lib
+    import traceback
+    
+    print(f"[NotebookLM] === REQUEST RECEIVED ===")
+    print(f"[NotebookLM] source_name: {request.source_name}")
+    print(f"[NotebookLM] content_type: {request.content_type}")
+    print(f"[NotebookLM] content_length: {len(request.content) if request.content else 0}")
     
     if not NOTEBOOKLM_PROJECT_NUMBER:
-            raise HTTPException(
+        raise HTTPException(
             status_code=500, 
             detail="NotebookLM not configured. Set NOTEBOOKLM_PROJECT_NUMBER environment variable."
         )
@@ -915,6 +925,8 @@ def notebooklm_add_source(request: NotebookLMRequest):
     else:
         # Step 1: Classify content using l2m2/Gemini Pro 2.5
         print(f"[NotebookLM] STEP 1/2: CLASSIFYING CONTENT")
+        print(f"[NotebookLM] Content length: {len(request.content) if request.content else 0} chars")
+        print(f"[NotebookLM] Content preview: {request.content[:500] if request.content else '(empty)'}...")
         classified_notebooks = classify_content_for_notebooks(request.content)
         
         if not classified_notebooks:
