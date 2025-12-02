@@ -8,12 +8,6 @@ export default function YouTubeInput({ onSubmit }) {
   const [url, setUrl] = useState('')
   const [videoTitle, setVideoTitle] = useState('')
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (!url.trim()) return
-    onSubmit(url.trim())
-  }
-
   // Extract video ID for preview
   const getVideoId = (url) => {
     const patterns = [
@@ -57,12 +51,12 @@ export default function YouTubeInput({ onSubmit }) {
           <Youtube color="white" size={24} />
         </div>
         <div>
-          <h2>YouTube Transcript</h2>
-          <p>Enter a YouTube URL to extract the transcript</p>
+          <h2>YouTube</h2>
+          <p>Enter a YouTube URL to save to NotebookLM</p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={(e) => e.preventDefault()}>
         <div className="form-group">
           <label>YouTube URL</label>
           <input
@@ -72,7 +66,7 @@ export default function YouTubeInput({ onSubmit }) {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />
-          <p className="form-hint">Paste a YouTube video URL to get its transcript</p>
+          <p className="form-hint">Paste a YouTube video URL to save to NotebookLM</p>
         </div>
 
         {videoId && (
@@ -90,21 +84,15 @@ export default function YouTubeInput({ onSubmit }) {
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button type="submit" className="submit-btn youtube" style={{ flex: 1 }}>
-            <Send size={18} />
-            Get Transcript
-          </button>
-          {videoId && (
-            <NotebookLMExport 
-              content="" 
-              sourceName={videoTitle || `YouTube Video ${videoId}`}
-              sourceType="youtube"
-              contentType="youtube"
-              url={url.trim()}
-            />
-          )}
-        </div>
+        {videoId && (
+          <NotebookLMExport 
+            content="" 
+            sourceName={videoTitle || `YouTube Video ${videoId}`}
+            sourceType="youtube"
+            contentType="youtube"
+            url={url.trim()}
+          />
+        )}
       </form>
     </div>
   )

@@ -667,7 +667,7 @@ def youtube_transcript(request: YouTubeRequest):
         # Format transcript to match expected structure
         transcript = []
         for segment in transcripts:
-                    transcript.append({
+            transcript.append({
                 "text": segment.get("text", "").strip(),
                 "start": segment.get("start", 0),
                 "duration": segment.get("duration", 0)
@@ -691,11 +691,13 @@ def youtube_transcript(request: YouTubeRequest):
         
         print(f"[YouTube] Title: {video_info['title']}")
         print(f"[YouTube] Transcript segments: {len(transcript)}")
+        print(f"[YouTube] Original URL: {request.url}")
         
         return {
             "video_id": video_id,
             "video_info": video_info,
-            "transcript": transcript
+            "transcript": transcript,
+            "original_url": request.url  # Preserve the original user-entered URL
         }
         
     except HTTPException:
@@ -720,6 +722,7 @@ class NotebookLMRequest(BaseModel):
     source_type: str = "auto"  # Kept for backwards compatibility, but not used for routing
     content_type: str = "text"  # "text", "web", or "youtube"
     url: Optional[str] = None  # For web or youtube content
+    notebook_ids: Optional[List[str]] = None  # Optional list of notebook IDs to send to (if not provided, uses AI classification)
 
 
 def _get_notebooklm_credentials():
@@ -797,7 +800,8 @@ def _add_source_to_notebook(notebook_id: str, notebook_name: str, source_name: s
             }
         }
     elif content_type == "youtube":
-        # NotebookLM handles YouTube URLs as webContent
+        # Use webContent for YouTube URLs - NotebookLM can process YouTube URLs via webContent
+        # The API doesn't recognize "url" field in videoContent, so we use webContent instead
         user_content = {
             "webContent": {
                 "url": url,
@@ -805,30 +809,59 @@ def _add_source_to_notebook(notebook_id: str, notebook_name: str, source_name: s
             }
         }
     else:
-        return {"success": False, "notebook": notebook_name, "error": f"Unknown content type: {content_type}"}
+        return {"success": False, "notebook": notebook_name, "notebook_id": notebook_id, "error": f"Unknown content type: {content_type}"}
     
     payload = {
         "userContents": [user_content]
     }
     
-    print(f"[NotebookLM] Adding source to notebook: {notebook_name} ({notebook_id})")
-    print(f"[NotebookLM] API URL: {api_url}")
+    import json
+    
+    print(f"\n{'='*80}")
+    print(f"[NotebookLM] EXACT API CALL DETAILS")
+    print(f"{'='*80}")
+    print(f"[NotebookLM] Notebook: {notebook_name} ({notebook_id})")
+    print(f"[NotebookLM] Content Type: {content_type}")
+    print(f"[NotebookLM] Source Name: {source_name}")
+    print(f"[NotebookLM] URL being sent: {url}")
+    print(f"\n[NotebookLM] API Endpoint:")
+    print(f"  METHOD: POST")
+    print(f"  URL: {api_url}")
+    print(f"\n[NotebookLM] Headers:")
+    print(f"  Authorization: Bearer {access_token[:30]}...{access_token[-10:] if len(access_token) > 40 else ''}")
+    print(f"  Content-Type: {headers['Content-Type']}")
+    print(f"\n[NotebookLM] Payload (JSON):")
+    print(json.dumps(payload, indent=2))
+    print(f"\n[NotebookLM] CURL Equivalent:")
+    print(f"curl -X POST \\")
+    print(f"  -H \"Authorization: Bearer $(gcloud auth print-access-token)\" \\")
+    print(f"  -H \"Content-Type: application/json\" \\")
+    print(f"  \"{api_url}\" \\")
+    print(f"  -d '{json.dumps(payload)}'")
+    print(f"{'='*80}\n")
     
     try:
         response = requests.post(api_url, headers=headers, json=payload, timeout=60)
         
+        print(f"[NotebookLM] Response Status: {response.status_code}")
+        print(f"[NotebookLM] Response Headers: {dict(response.headers)}")
+        
         if response.status_code == 200:
             result = response.json()
+            print(f"[NotebookLM] Response Body:")
+            print(json.dumps(result, indent=2))
             print(f"[NotebookLM] ✅ Success! Source added to {notebook_name}")
-            return {"success": True, "notebook": notebook_name, "result": result}
+            return {"success": True, "notebook": notebook_name, "notebook_id": notebook_id, "result": result}
         else:
-            error_detail = response.text[:500]
-            print(f"[NotebookLM] ❌ Error for {notebook_name}: {response.status_code} - {error_detail}")
-            return {"success": False, "notebook": notebook_name, "error": error_detail}
+            error_detail = response.text
+            print(f"[NotebookLM] Error Response:")
+            print(error_detail)
+            print(f"[NotebookLM] ❌ Error for {notebook_name}: {response.status_code}")
+            return {"success": False, "notebook": notebook_name, "notebook_id": notebook_id, "error": error_detail[:500]}
             
     except requests.exceptions.RequestException as e:
         print(f"[NotebookLM] ❌ Request error for {notebook_name}: {e}")
-        return {"success": False, "notebook": notebook_name, "error": str(e)}
+        return {"success": False, "notebook": notebook_name, "notebook_id": notebook_id, "error": str(e)}
 
 
 @app.post("/notebooklm/add-source")
@@ -859,26 +892,41 @@ def notebooklm_add_source(request: NotebookLMRequest):
     if request.content_type in ["web", "youtube"] and not request.url:
         raise HTTPException(status_code=400, detail=f"URL required for {request.content_type} content")
     
-    # Step 1: Classify content using l2m2/Gemini Pro 2.5
+    # Step 1: Determine which notebooks to use
     print(f"")
     print(f"=" * 60)
-    print(f"[NotebookLM] STEP 1/2: CLASSIFYING CONTENT")
     print(f"[NotebookLM] Source name: {request.source_name}")
     print(f"[NotebookLM] Content type: {request.content_type}")
     print(f"=" * 60)
     
-    classified_notebooks = classify_content_for_notebooks(request.content)
-    
-    if not classified_notebooks:
-        print(f"[NotebookLM] ⚠️ No notebooks matched for this content")
-        return {
-            "success": False,
-            "message": "Content did not match any investment-theme notebooks",
-            "classified_notebooks": [],
-            "results": []
-        }
-    
-    print(f"[NotebookLM] Classified into {len(classified_notebooks)} notebook(s): {classified_notebooks}")
+    # If notebook_ids are provided, use those; otherwise classify
+    if request.notebook_ids and len(request.notebook_ids) > 0:
+        print(f"[NotebookLM] Using user-selected notebooks: {request.notebook_ids}")
+        # Convert notebook IDs to names for display
+        notebook_id_to_name = {v: k for k, v in NOTEBOOKLM_NOTEBOOK_IDS.items()}
+        selected_notebooks = []
+        for notebook_id in request.notebook_ids:
+            notebook_name = notebook_id_to_name.get(notebook_id)
+            if notebook_name:
+                selected_notebooks.append(notebook_name)
+            else:
+                print(f"[NotebookLM] ⚠️ Unknown notebook ID: {notebook_id}")
+        classified_notebooks = selected_notebooks
+    else:
+        # Step 1: Classify content using l2m2/Gemini Pro 2.5
+        print(f"[NotebookLM] STEP 1/2: CLASSIFYING CONTENT")
+        classified_notebooks = classify_content_for_notebooks(request.content)
+        
+        if not classified_notebooks:
+            print(f"[NotebookLM] ⚠️ No notebooks matched for this content")
+            return {
+                "success": False,
+                "message": "Content did not match any investment-theme notebooks",
+                "classified_notebooks": [],
+                "results": []
+            }
+        
+        print(f"[NotebookLM] Classified into {len(classified_notebooks)} notebook(s): {classified_notebooks}")
     
     # Step 2: Get credentials
     try:
@@ -894,10 +942,10 @@ def notebooklm_add_source(request: NotebookLMRequest):
                    "GOOGLE_SERVICE_ACCOUNT_JSON (JSON string) environment variable."
         )
     
-    # Step 3: Send to each classified notebook
+    # Step 2: Get credentials and send to notebooks
     print(f"")
     print(f"=" * 60)
-    print(f"[NotebookLM] STEP 2/2: SENDING TO NOTEBOOKS")
+    print(f"[NotebookLM] SENDING TO NOTEBOOKS")
     print(f"=" * 60)
     
     results = []
@@ -910,7 +958,8 @@ def notebooklm_add_source(request: NotebookLMRequest):
             print(f"[NotebookLM] ⚠️ Unknown notebook name: {notebook_name}")
             results.append({
                 "success": False, 
-                "notebook": notebook_name, 
+                "notebook": notebook_name,
+                "notebook_id": None,
                 "error": "Notebook not found in configuration"
             })
             continue
@@ -935,11 +984,36 @@ def notebooklm_add_source(request: NotebookLMRequest):
     print(f"[NotebookLM] ✅ COMPLETE: {success_count}/{len(classified_notebooks)} notebooks updated")
     print(f"=" * 60)
     
+    # Build a mapping of notebook names to IDs for frontend use
+    notebook_mapping = {}
+    for notebook_name in classified_notebooks:
+        notebook_id = NOTEBOOKLM_NOTEBOOK_IDS.get(notebook_name)
+        if notebook_id:
+            notebook_mapping[notebook_name] = notebook_id
+    
     return {
         "success": success_count > 0,
         "message": f"Source added to {success_count}/{len(classified_notebooks)} notebooks",
         "classified_notebooks": classified_notebooks,
+        "notebook_mapping": notebook_mapping,  # Map of name -> ID
         "results": results
+    }
+
+
+@app.get("/notebooklm/notebooks")
+def notebooklm_get_notebooks():
+    """
+    Get list of available NotebookLM notebooks.
+    """
+    notebooks = []
+    for name, notebook_id in NOTEBOOKLM_NOTEBOOK_IDS.items():
+        notebooks.append({
+            "name": name,
+            "id": notebook_id
+        })
+    
+    return {
+        "notebooks": notebooks
     }
 
 

@@ -29,15 +29,50 @@ export default function YouTubeResults({ data }) {
   const [loading, setLoading] = useState(false)
   const [transcript, setTranscript] = useState(null)
   const [videoInfo, setVideoInfo] = useState(null)
+  const [videoTitle, setVideoTitle] = useState(null) // Real title from oEmbed API
   const [saved, setSaved] = useState(false)
   const [copied, setCopied] = useState(false)
   const [apiError, setApiError] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
   const [progressStep, setProgressStep] = useState(0) // 0: starting, 1: downloading, 2: transcribing
   const [elapsedTime, setElapsedTime] = useState(0)
+  const [originalUrl, setOriginalUrl] = useState(data.url) // Preserve original URL
   const hasLoadedRef = useRef(false)
   const urlRef = useRef('')
   const timerRef = useRef(null)
+  
+  // Extract video ID for oEmbed title fetch
+  const getVideoId = (url) => {
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+      /^([a-zA-Z0-9_-]{11})$/
+    ]
+    for (const pattern of patterns) {
+      const match = url.match(pattern)
+      if (match) return match[1]
+    }
+    return null
+  }
+  
+  // Fetch real video title via oEmbed API (same as YouTubeInput.jsx)
+  useEffect(() => {
+    const videoId = getVideoId(data.url)
+    if (videoId) {
+      const fetchVideoTitle = async () => {
+        try {
+          const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
+          const response = await fetch(oembedUrl)
+          if (response.ok) {
+            const data = await response.json()
+            setVideoTitle(data.title)
+          }
+        } catch (e) {
+          console.error('Error fetching video title:', e)
+        }
+      }
+      fetchVideoTitle()
+    }
+  }, [data.url])
 
   const fetchTranscript = async (isRefresh = false) => {
     setLoading(true)
@@ -84,13 +119,17 @@ export default function YouTubeResults({ data }) {
       const result = await response.json()
       setTranscript(result.transcript)
       setVideoInfo(result.video_info)
+      // Preserve the original URL from backend response, or fallback to data.url
+      const preservedUrl = result.original_url || data.url
+      setOriginalUrl(preservedUrl)
       hasLoadedRef.current = true
-      urlRef.current = data.url
+      urlRef.current = preservedUrl
       
       // Save to query history (only on initial load, not refresh)
       if (!isRefresh) {
+        const preservedUrl = result.original_url || data.url
         saveQueryToHistory('youtube', {
-          url: data.url,
+          url: preservedUrl,
           title: result.video_info?.title
         }, `YouTube: ${result.video_info?.title?.slice(0, 30) || 'Video'}`)
       }
@@ -347,10 +386,10 @@ export default function YouTubeResults({ data }) {
             {transcript && (
               <NotebookLMExport 
                 content={transcript.map(s => s.text).join('\n\n')}
-                sourceName={`YouTube: ${videoInfo?.title || 'Video'}`}
+                sourceName={videoTitle || `YouTube Video ${getVideoId(originalUrl) || 'Video'}`}
                 sourceType="youtube"
                 contentType="youtube"
-                url={data.url}
+                url={originalUrl}
               />
             )}
           </div>
