@@ -284,18 +284,270 @@ import os
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
+# l2m2 Configuration for AI classification
+L2M2_API_URL = os.getenv("L2M2_API_URL", "http://l2m2-production")
+L2M2_COMPLETIONS_ENDPOINT = f"{L2M2_API_URL}/api/v1/completions/"
+
 # NotebookLM Configuration
 NOTEBOOKLM_PROJECT_NUMBER = os.getenv("NOTEBOOKLM_PROJECT_NUMBER", "511538466121")
 NOTEBOOKLM_LOCATION = os.getenv("NOTEBOOKLM_LOCATION", "global")
 NOTEBOOKLM_ENDPOINT_LOCATION = os.getenv("NOTEBOOKLM_ENDPOINT_LOCATION", "global-")
 NOTEBOOKLM_SERVICE_ACCOUNT = os.getenv("NOTEBOOKLM_SERVICE_ACCOUNT", "notebooklm@graphic-charter-467314-n9.iam.gserviceaccount.com")
 
-# Notebook IDs by content type
+# V2 Investment Theme Notebook IDs - dynamically routed via AI classification
 NOTEBOOKLM_NOTEBOOK_IDS = {
-    "polymarket": "67f739c7-e891-41c6-a0a1-9fc4708d1de7",
-    "twitter": "823b748e-e688-4570-bc1c-d769c87f0ec2",
-    "youtube": "0d48bb2e-6d37-429b-9c71-46229ea9fe33"
+    "V2 - AI Infrastructure: Compute, Chips & Energy": "f25548c1-5a82-4ed8-a443-fe158924be3d",
+    "V2 - Agentic Labor & Vibe Coding: The $10T Labor Arbitrage": "caaa9690-c773-4a60-96e7-ccf3f547210a",
+    "V2 - Venture Metrics, Fund Strategy & Liquidity": "a2841480-b28d-4c6a-8545-433a322ad39a",
+    "V2 - Incumbents vs. The Disruptors: AI Competition & GTM": "d388e457-604e-47c5-8f44-fa698eab3272",
+    "V2 - Geopolitics, China & Sovereign AI (\"Red Stack\")": "fd8c00fb-2ae3-4eb5-8454-48142b6c6848",
+    "V2 - The Frontier Model Race & Public–Private Fusion": "094f9eec-9420-4b3e-b5a7-6ee14342abee",
 }
+
+# Classification prompt for routing content to notebooks
+NOTEBOOK_CLASSIFICATION_PROMPT = '''You are an AI content router for an investor's NotebookLM workspace.
+
+Your job:
+
+Given a user-supplied passage (a paragraph, article excerpt, memo, or transcript), decide which of the following investment-theme notebooks it belongs in.
+
+General rules:
+
+- You MAY assign a passage to multiple notebooks if it clearly fits more than one theme.
+
+- Most passages should have 1–3 notebooks, not all of them.
+
+- If no notebook is a clear fit, return an empty list.
+
+- Focus on the underlying INVESTMENT THEME, not just surface keywords.
+
+- When torn between two themes, choose the one that best explains the *core* thesis of the passage, and only add a second notebook if that theme is truly central.
+
+Available notebooks and themes:
+
+1) "V2 - AI Infrastructure: Compute, Chips & Energy"
+
+   - Theme: Owning the physical and capital-intensive stack that powers AI: chips, data centers, networking, and energy.
+
+   - Put content here when it is primarily about:
+
+     - Chips / GPUs / TPUs / accelerators (e.g., Nvidia, HBM, CUDA, TPUs, custom silicon).
+
+     - Data center buildout, hyperscaler capex, "Mag 7" infrastructure spending.
+
+     - Energy as a bottleneck (power plants, nuclear, grid constraints).
+
+     - Compute scarcity, who controls compute, and infra-driven revenue loops (e.g., round-tripping AI lab spend back into cloud + chips).
+
+     - Infrastructure capital rotation that is clearly anchored around hardware/compute.
+
+   - Strong cues: "Nvidia", "HBM", "GPU cluster", "TPU", "data center", "capex arms race", "energy bottleneck", "nuclear", "hyperscalers".
+
+2) "V2 - Agentic Labor & Vibe Coding: The $10T Labor Arbitrage"
+
+   - Theme: AI agents and "liquid software" that replace or radically augment human labor, especially in coding and enterprise workflows.
+
+   - Put content here when it is primarily about:
+
+     - AI agents doing work that humans used to do (SDRs, support agents, analysts, etc.).
+
+     - Vibe coding / liquid software: non-technical users building software via LLMs.
+
+     - Expansion of the developer / coder market via AI tools.
+
+     - Application-layer "killer apps" where the core product is an AI agent or assistant, especially in coding.
+
+     - Open-source agent business models (paid support, security, enterprise deployment).
+
+   - Strong cues: "agents", "agentic", "vibe coding", "liquid software", "AI SDR", "AI support", "Cursor", "Replit", "Devin", "Copilot", "OpenHands".
+
+3) "V2 - Venture Metrics, Fund Strategy & Liquidity"
+
+   - Theme: How to price, fund, and structure AI companies and funds in a world where classic SaaS metrics break down.
+
+   - Put content here when it is primarily about:
+
+     - Gross profit dollars vs margins, impact of inference cost on unit economics.
+
+     - Burn multiple, growth vs cash burn trade-offs.
+
+     - Entry price vs outcome size (e.g., Scale AI / Alex Wang examples).
+
+     - Fund size as strategy (mega-funds vs boutiques), and its implications.
+
+     - Kingmaking via capital concentration in one startup.
+
+     - Retail capital entering venture, perpetual secondary markets, liquidity for private companies.
+
+     - Capital rotation examples when the main lens is portfolio construction or valuation, not hardware or models.
+
+   - Strong cues: "gross margin", "gross profit dollars", "burn multiple", "entry price", "outcome size", "fund size", "mega fund", "secondary market", "liquidity", "retail investors".
+
+4) "V2 - Incumbents vs. The Disruptors: AI Competition & GTM"
+
+   - Theme: Competitive dynamics and game theory between established tech giants and AI-native startups.
+
+   - Put content here when it is primarily about:
+
+     - "War mode" vs "peacetime" cultures in big companies.
+
+     - Whether incumbents (Google, Meta, Microsoft, etc.) are dead or resilient in AI.
+
+     - Vertical battles: startups vs incumbents in specific sectors (e.g., legal tech, customer support).
+
+     - Distribution, go-to-market strategies, and speed of integration.
+
+     - Browser/search/app battles framed as startup vs incumbent.
+
+   - Strong cues: "incumbent vs startup", "disruptor", "war mode", "game theory", "distribution", "go-to-market", "Harvey", "Sierra", "Intercom", "Brave".
+
+5) "V2 - Geopolitics, China & Sovereign AI ("Red Stack")"
+
+   - Theme: Nation-state AI strategies, export controls, and the bifurcation of US vs Chinese AI ecosystems.
+
+   - Put content here when it is primarily about:
+
+     - Beijing or Chinese regulators directing chip/model procurement (e.g., banning Nvidia, mandating Huawei/Cambricon).
+
+     - The emergence of a "Red Stack" based on Chinese chips, mixed clusters, and open-weight models.
+
+     - US export controls on chips or models, especially toward third-party countries (e.g., Malaysia).
+
+     - Sovereign AI and countries choosing between US and Chinese stacks.
+
+     - Price wars driven specifically by Chinese models attacking global markets.
+
+   - Strong cues: "China", "Chinese", "Beijing", "ByteDance", "Alibaba", "Huawei", "Ascend", "Cambricon", "Red Stack", "export controls", "sovereign AI".
+
+6) "V2 - The Frontier Model Race & Public–Private Fusion"
+
+   - Theme: The capital-intensive race to build frontier models and the emerging fusion of state and private labs.
+
+   - Put content here when it is primarily about:
+
+     - Frontier model training (Gemini, GPT, xAI, etc.), especially pretraining vs post-training.
+
+     - Technical and capital moats built by large training runs.
+
+     - Government partnerships with labs (national labs providing data/compute, "AI Manhattan Project", etc.).
+
+     - Subscriber economics or other scale economics specifically tied to funding frontier model development.
+
+   - Strong cues: "frontier model", "Gemini 3", "GPT-4/5", "xAI", "pretraining", "post-training", "RLHF", "national labs", "AI Manhattan Project", "220M paying subscribers".
+
+Conflict resolution and multi-tagging:
+
+- Start by asking: "What is the MAIN question or investment thesis of this passage?"
+
+- Assign that theme as the first notebook.
+
+- Only add a second or third notebook if that theme is genuinely co-equal (e.g., Chinese export controls on chips → BOTH Geopolitics/China AND AI Infrastructure).
+
+- Do NOT assign more than three notebooks for any single passage.
+
+Output format:
+
+- Return ONLY a JSON array of notebook titles you select, sorted by most to least relevant.
+
+- Example:
+
+  ["V2 - AI Infrastructure: Compute, Chips & Energy", "V2 - Geopolitics, China & Sovereign AI (\\"Red Stack\\")"]
+
+---
+
+PASSAGE TO CLASSIFY:
+
+'''
+
+
+def classify_content_for_notebooks(content: str) -> list:
+    """
+    Use l2m2 to classify content and determine which notebooks it should be routed to.
+    
+    Args:
+        content: The markdown/text content to classify
+        
+    Returns:
+        List of notebook names that the content should be sent to
+    """
+    import requests
+    import json
+    
+    # Truncate content if too long (keep first ~8000 chars for classification)
+    truncated_content = content[:8000] if len(content) > 8000 else content
+    
+    full_prompt = NOTEBOOK_CLASSIFICATION_PROMPT + truncated_content
+    
+    data = {
+        "cached": True,
+        "context": {
+            "host": "sourcer",
+            "local_user": "notebooklm-router",
+            "property": "content-classification"
+        },
+        "models": [
+            {
+                "model": "gemini-2.5-pro",
+                "temperature": 0.1,
+            }
+        ],
+        "messages": [
+            {
+                "role": "user",
+                "content": full_prompt
+            }
+        ],
+    }
+    
+    try:
+        print(f"[NotebookLM] Classifying content via l2m2...")
+        response = requests.post(
+            L2M2_COMPLETIONS_ENDPOINT,
+            headers={'Content-Type': 'application/json'},
+            json=data,
+            timeout=60
+        )
+        
+        response.raise_for_status()
+        result = response.json()
+        
+        if result.get("errors") and result["errors"][0]:
+            print(f"[NotebookLM] l2m2 error: {result['errors'][0]}")
+            return []
+        
+        if "completions" in result and len(result["completions"]) > 0:
+            completion_text = result["completions"][0]
+            print(f"[NotebookLM] Classification result: {completion_text}")
+            
+            # Parse the JSON array from the response
+            # Handle potential markdown code blocks
+            cleaned = completion_text.strip()
+            if cleaned.startswith("```"):
+                # Remove markdown code block
+                lines = cleaned.split("\n")
+                cleaned = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
+                cleaned = cleaned.strip()
+            
+            notebooks = json.loads(cleaned)
+            
+            if isinstance(notebooks, list):
+                return notebooks
+            else:
+                print(f"[NotebookLM] Unexpected response format: {notebooks}")
+                return []
+        else:
+            print("[NotebookLM] No completion in l2m2 response")
+            return []
+            
+    except requests.exceptions.RequestException as e:
+        print(f"[NotebookLM] l2m2 request error: {e}")
+        return []
+    except json.JSONDecodeError as e:
+        print(f"[NotebookLM] Failed to parse classification response as JSON: {e}")
+        return []
+    except Exception as e:
+        print(f"[NotebookLM] Classification error: {e}")
+        return []
 
 def parse_duration_iso8601(duration: str) -> int:
     """Parse ISO 8601 duration (PT1H2M3S) to seconds."""
@@ -546,92 +798,56 @@ def youtube_transcript(request: YouTubeRequest):
 class NotebookLMRequest(BaseModel):
     source_name: str
     content: str
-    source_type: str  # "polymarket", "twitter", or "youtube"
+    source_type: str = "auto"  # Kept for backwards compatibility, but not used for routing
     content_type: str = "text"  # "text", "web", or "youtube"
     url: Optional[str] = None  # For web or youtube content
 
 
-@app.post("/notebooklm/add-source")
-def notebooklm_add_source(request: NotebookLMRequest):
-    """
-    Add a source to a NotebookLM notebook.
+def _get_notebooklm_credentials():
+    """Get Google Cloud credentials for NotebookLM API."""
+    from google.oauth2 import service_account
+    from google.auth.transport.requests import Request
+    import json
     
-    Supports:
-    - Text content (raw text)
-    - Web content (URL)
-    - YouTube video (URL)
+    credentials = None
     
-    Uses service account authentication.
-    """
-    import requests
-    
-    if not NOTEBOOKLM_PROJECT_NUMBER:
-        raise HTTPException(
-            status_code=500, 
-            detail="NotebookLM not configured. Set NOTEBOOKLM_PROJECT_NUMBER environment variable."
+    # Method 1: Try file path (GOOGLE_APPLICATION_CREDENTIALS)
+    creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if creds_path and os.path.exists(creds_path):
+        print(f"[NotebookLM] Using credentials file: {creds_path}")
+        credentials = service_account.Credentials.from_service_account_file(
+            creds_path,
+            scopes=['https://www.googleapis.com/auth/cloud-platform']
         )
     
-    # Get access token from service account
-    try:
-        from google.oauth2 import service_account
-        from google.auth.transport.requests import Request
-        import json
-        
-        credentials = None
-        
-        # Method 1: Try file path (GOOGLE_APPLICATION_CREDENTIALS)
-        creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-        if creds_path and os.path.exists(creds_path):
-            print(f"[NotebookLM] Using credentials file: {creds_path}")
-            credentials = service_account.Credentials.from_service_account_file(
-                creds_path,
+    # Method 2: Try JSON string from environment variable
+    if not credentials:
+        service_account_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+        if service_account_json:
+            print(f"[NotebookLM] Using credentials from GOOGLE_SERVICE_ACCOUNT_JSON")
+            sa_info = json.loads(service_account_json)
+            credentials = service_account.Credentials.from_service_account_info(
+                sa_info,
                 scopes=['https://www.googleapis.com/auth/cloud-platform']
             )
-        
-        # Method 2: Try JSON string from environment variable
-        if not credentials:
-            service_account_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
-            if service_account_json:
-                print(f"[NotebookLM] Using credentials from GOOGLE_SERVICE_ACCOUNT_JSON")
-                try:
-                    sa_info = json.loads(service_account_json)
-                    credentials = service_account.Credentials.from_service_account_info(
-                        sa_info,
-                        scopes=['https://www.googleapis.com/auth/cloud-platform']
-                    )
-                except json.JSONDecodeError as e:
-                    raise ValueError(f"GOOGLE_SERVICE_ACCOUNT_JSON is not valid JSON: {e}")
-        
-        # Method 3: Fall back to default (GCP metadata service)
-        if not credentials:
-            print(f"[NotebookLM] Using default credentials (GCP metadata)")
-            from google.auth import default
-            credentials, project = default(scopes=['https://www.googleapis.com/auth/cloud-platform'])
-        
-        # Refresh token if needed
-        if not credentials.valid:
-            credentials.refresh(Request())
-        
-        access_token = credentials.token
-        
-    except Exception as e:
-        print(f"[NotebookLM] Error getting service account token: {e}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to authenticate with service account: {str(e)}. "
-                   "Set GOOGLE_APPLICATION_CREDENTIALS (file path) or "
-                   "GOOGLE_SERVICE_ACCOUNT_JSON (JSON string) environment variable."
-        )
     
-    # Get notebook ID based on source type
-    notebook_id = NOTEBOOKLM_NOTEBOOK_IDS.get(request.source_type.lower())
-    if not notebook_id:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unknown source_type: {request.source_type}. Must be one of: {list(NOTEBOOKLM_NOTEBOOK_IDS.keys())}"
-        )
+    # Method 3: Fall back to default (GCP metadata service)
+    if not credentials:
+        print(f"[NotebookLM] Using default credentials (GCP metadata)")
+        from google.auth import default
+        credentials, project = default(scopes=['https://www.googleapis.com/auth/cloud-platform'])
+    
+    # Refresh token if needed
+    if not credentials.valid:
+        credentials.refresh(Request())
+    
+    return credentials.token
+
+
+def _add_source_to_notebook(notebook_id: str, notebook_name: str, source_name: str,
+                            content: str, content_type: str, url: str, access_token: str) -> dict:
+    """Add a source to a specific NotebookLM notebook."""
+    import requests
     
     # Build the API URL
     api_url = (
@@ -647,43 +863,36 @@ def notebooklm_add_source(request: NotebookLMRequest):
     }
     
     # Build the content based on type
-    if request.content_type == "text":
+    if content_type == "text":
         user_content = {
             "textContent": {
-                "sourceName": request.source_name,
-                "content": request.content
+                "sourceName": source_name,
+                "content": content
             }
         }
-    elif request.content_type == "web":
-        if not request.url:
-            raise HTTPException(status_code=400, detail="URL required for web content")
+    elif content_type == "web":
         user_content = {
             "webContent": {
-                "url": request.url,
-                "sourceName": request.source_name
+                "url": url,
+                "sourceName": source_name
             }
         }
-    elif request.content_type == "youtube":
-        if not request.url:
-            raise HTTPException(status_code=400, detail="URL required for YouTube content")
-        # NotebookLM handles YouTube URLs as webContent - it will automatically detect and process YouTube videos
+    elif content_type == "youtube":
+        # NotebookLM handles YouTube URLs as webContent
         user_content = {
             "webContent": {
-                "url": request.url,
-                "sourceName": request.source_name
+                "url": url,
+                "sourceName": source_name
             }
         }
     else:
-        raise HTTPException(status_code=400, detail=f"Unknown content type: {request.content_type}")
+        return {"success": False, "notebook": notebook_name, "error": f"Unknown content type: {content_type}"}
     
     payload = {
         "userContents": [user_content]
     }
     
-    print(f"[NotebookLM] Adding source to notebook: {notebook_id}")
-    print(f"[NotebookLM] Source type: {request.source_type}")
-    print(f"[NotebookLM] Content type: {request.content_type}")
-    print(f"[NotebookLM] Source name: {request.source_name}")
+    print(f"[NotebookLM] Adding source to notebook: {notebook_name} ({notebook_id})")
     print(f"[NotebookLM] API URL: {api_url}")
     
     try:
@@ -691,23 +900,128 @@ def notebooklm_add_source(request: NotebookLMRequest):
         
         if response.status_code == 200:
             result = response.json()
-            print(f"[NotebookLM] Success! Source added.")
-            return {
-                "success": True,
-                "message": "Source added to NotebookLM",
-                "source": result
-            }
+            print(f"[NotebookLM] ✅ Success! Source added to {notebook_name}")
+            return {"success": True, "notebook": notebook_name, "result": result}
         else:
             error_detail = response.text[:500]
-            print(f"[NotebookLM] Error: {response.status_code} - {error_detail}")
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=f"NotebookLM API error: {error_detail}"
-            )
+            print(f"[NotebookLM] ❌ Error for {notebook_name}: {response.status_code} - {error_detail}")
+            return {"success": False, "notebook": notebook_name, "error": error_detail}
             
     except requests.exceptions.RequestException as e:
-        print(f"[NotebookLM] Request error: {e}")
-        raise HTTPException(status_code=500, detail=f"Request failed: {str(e)}")
+        print(f"[NotebookLM] ❌ Request error for {notebook_name}: {e}")
+        return {"success": False, "notebook": notebook_name, "error": str(e)}
+
+
+@app.post("/notebooklm/add-source")
+def notebooklm_add_source(request: NotebookLMRequest):
+    """
+    Add a source to NotebookLM notebooks using AI classification.
+    
+    The content is analyzed by Gemini Pro 2.5 to determine which investment-theme
+    notebooks it should be routed to. Content can be sent to multiple notebooks
+    (typically 1-3) based on the themes detected.
+    
+    Supports:
+    - Text content (raw text)
+    - Web content (URL)
+    - YouTube video (URL)
+    
+    Uses service account authentication.
+    """
+    import requests as req_lib
+    
+    if not NOTEBOOKLM_PROJECT_NUMBER:
+            raise HTTPException(
+            status_code=500, 
+            detail="NotebookLM not configured. Set NOTEBOOKLM_PROJECT_NUMBER environment variable."
+        )
+    
+    # Validate content type requirements
+    if request.content_type in ["web", "youtube"] and not request.url:
+        raise HTTPException(status_code=400, detail=f"URL required for {request.content_type} content")
+    
+    # Step 1: Classify content using l2m2/Gemini Pro 2.5
+    print(f"")
+    print(f"=" * 60)
+    print(f"[NotebookLM] STEP 1/2: CLASSIFYING CONTENT")
+    print(f"[NotebookLM] Source name: {request.source_name}")
+    print(f"[NotebookLM] Content type: {request.content_type}")
+    print(f"=" * 60)
+    
+    classified_notebooks = classify_content_for_notebooks(request.content)
+    
+    if not classified_notebooks:
+        print(f"[NotebookLM] ⚠️ No notebooks matched for this content")
+        return {
+            "success": False,
+            "message": "Content did not match any investment-theme notebooks",
+            "classified_notebooks": [],
+            "results": []
+        }
+    
+    print(f"[NotebookLM] Classified into {len(classified_notebooks)} notebook(s): {classified_notebooks}")
+    
+    # Step 2: Get credentials
+    try:
+        access_token = _get_notebooklm_credentials()
+    except Exception as e:
+        print(f"[NotebookLM] Error getting service account token: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to authenticate with service account: {str(e)}. "
+                   "Set GOOGLE_APPLICATION_CREDENTIALS (file path) or "
+                   "GOOGLE_SERVICE_ACCOUNT_JSON (JSON string) environment variable."
+        )
+    
+    # Step 3: Send to each classified notebook
+    print(f"")
+    print(f"=" * 60)
+    print(f"[NotebookLM] STEP 2/2: SENDING TO NOTEBOOKS")
+    print(f"=" * 60)
+    
+    results = []
+    success_count = 0
+    
+    for notebook_name in classified_notebooks:
+        notebook_id = NOTEBOOKLM_NOTEBOOK_IDS.get(notebook_name)
+        
+        if not notebook_id:
+            print(f"[NotebookLM] ⚠️ Unknown notebook name: {notebook_name}")
+            results.append({
+                "success": False, 
+                "notebook": notebook_name, 
+                "error": "Notebook not found in configuration"
+            })
+            continue
+        
+        result = _add_source_to_notebook(
+            notebook_id=notebook_id,
+            notebook_name=notebook_name,
+            source_name=request.source_name,
+            content=request.content,
+            content_type=request.content_type,
+            url=request.url,
+            access_token=access_token
+        )
+        
+        results.append(result)
+        if result["success"]:
+            success_count += 1
+    
+    # Summary
+    print(f"")
+    print(f"=" * 60)
+    print(f"[NotebookLM] ✅ COMPLETE: {success_count}/{len(classified_notebooks)} notebooks updated")
+    print(f"=" * 60)
+    
+    return {
+        "success": success_count > 0,
+        "message": f"Source added to {success_count}/{len(classified_notebooks)} notebooks",
+        "classified_notebooks": classified_notebooks,
+        "results": results
+    }
 
 
 @app.get("/notebooklm/config")
