@@ -531,6 +531,13 @@ def classify_content_for_notebooks(content: str) -> tuple:
         print(f"[NotebookLM] Output field value: {output}")
         print(f"[NotebookLM] Full result keys: {list(result.keys())}")
         
+        # Check if output is already a list of notebook names (strings)
+        if isinstance(output, list) and len(output) > 0:
+            # Check if it's already a list of notebook name strings
+            if all(isinstance(item, str) and "V2 -" in item for item in output):
+                print(f"[NotebookLM] ✅ Output is already a list of notebook names: {output}")
+                return output, None
+        
         # Try to extract the completion text from various possible formats
         completion_text = ""
         if output:
@@ -539,7 +546,7 @@ def classify_content_for_notebooks(content: str) -> tuple:
             elif isinstance(output, list) and len(output) > 0:
                 first_item = output[0]
                 if isinstance(first_item, dict):
-                    completion_text = first_item.get("text", "") or first_item.get("content", "") or str(first_item)
+                    completion_text = first_item.get("text", "") or first_item.get("content", "") or json.dumps(first_item)
                 else:
                     completion_text = str(first_item)
             elif isinstance(output, dict):
@@ -554,6 +561,10 @@ def classify_content_for_notebooks(content: str) -> tuple:
             if choices and len(choices) > 0:
                 completion_text = choices[0].get("message", {}).get("content", "") or choices[0].get("text", "")
                 print(f"[NotebookLM] Found completion in choices: {completion_text[:100]}...")
+        
+        # Ensure completion_text is a string
+        if not isinstance(completion_text, str):
+            completion_text = json.dumps(completion_text) if completion_text else ""
         
         if completion_text:
             print(f"[NotebookLM] ✅ Classification result: {completion_text[:200]}...")
