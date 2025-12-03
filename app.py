@@ -525,9 +525,14 @@ def classify_content_for_notebooks(content: str) -> tuple:
             print(f"[NotebookLM] ❌ l2m2 error: {error_msg}")
             return [], f"l2m2 API error: {error_msg}"
         
-        # l2m2 responses format: output_text
-        completion_text = result.get("output_text", "")
-        if completion_text:
+        # l2m2 responses format: output (can be string or list)
+        output = result.get("output")
+        if output:
+            # Handle both string and list formats
+            if isinstance(output, list) and len(output) > 0:
+                completion_text = output[0].get("text", "") if isinstance(output[0], dict) else str(output[0])
+            else:
+                completion_text = str(output)
             print(f"[NotebookLM] ✅ Classification result: {completion_text}")
             
             # Parse the JSON array from the response
@@ -553,10 +558,10 @@ def classify_content_for_notebooks(content: str) -> tuple:
                 print(f"[NotebookLM] JSON parse error: {parse_error}")
                 return [], f"Failed to parse LLM response: {cleaned[:100]}"
         else:
-            print(f"[NotebookLM] ⚠️ No output_text in l2m2 response")
+            print(f"[NotebookLM] ⚠️ No output in l2m2 response")
             print(f"[NotebookLM] Response keys: {list(result.keys())}")
             print(f"[NotebookLM] Full response: {json.dumps(result)[:500]}")
-            return [], f"No output_text in l2m2 response. Keys: {list(result.keys())}"
+            return [], f"No output in l2m2 response. Keys: {list(result.keys())}"
             
     except requests.exceptions.Timeout as e:
         print(f"[NotebookLM] ❌ l2m2 request timeout: {e}")
