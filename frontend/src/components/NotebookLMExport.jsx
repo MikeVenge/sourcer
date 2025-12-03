@@ -156,8 +156,13 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
       
       console.log('[NotebookLMExport] Response data:', data)
       
-      // For auto-classified content (Twitter/Polymarket), show which notebooks were selected
-      if (!showNotebookSelection && data.classified_notebooks) {
+      // Check if classification failed or returned no notebooks
+      if (!data.success || (data.classified_notebooks && data.classified_notebooks.length === 0)) {
+        throw new Error(data.message || 'Content did not match any investment-theme notebooks')
+      }
+      
+      // For auto-classified content (Twitter/Polymarket/Reddit), show which notebooks were selected
+      if (!showNotebookSelection && data.classified_notebooks && data.classified_notebooks.length > 0) {
         const notebookMapping = data.notebook_mapping || {}
         const notebookResults = data.classified_notebooks.map(name => ({
           notebook: name,
@@ -264,6 +269,38 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
                 <br />
                 This may take 20-30 seconds.
               </p>
+            </div>
+          </div>
+        )}
+        
+        {/* Error modal */}
+        {error && (
+          <div 
+            className="notebooklm-modal-overlay" 
+            onClick={() => setError(null)}
+          >
+            <div 
+              className="notebooklm-modal" 
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: '500px' }}
+            >
+              <div className="notebooklm-modal-header">
+                <AlertCircle size={24} style={{ color: '#ef4444' }} />
+                <h3>Export Failed</h3>
+              </div>
+              <div className="notebooklm-modal-body">
+                <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.6' }}>
+                  {error}
+                </p>
+              </div>
+              <div className="notebooklm-modal-footer">
+                <button 
+                  className="submit-btn"
+                  onClick={() => setError(null)}
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}
