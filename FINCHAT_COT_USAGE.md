@@ -156,13 +156,16 @@ else:
 
 If you want to use l2m2 to call LLM models directly (bypassing the finchat CoT system), you can use this approach:
 
+**Note:** l2m2 v4 API uses OpenAI-compatible format with Bearer token authentication.
+
 ```python
 import requests
 import os
 
-# Configuration
-L2M2_API_URL = os.getenv('L2M2_API_URL', 'http://l2m2-production')
-L2M2_COMPLETIONS_ENDPOINT = f"{L2M2_API_URL}/api/v1/completions/"
+# Configuration - l2m2 v4 API (OpenAI-compatible)
+L2M2_API_URL = os.getenv('L2M2_API_URL', 'https://l2m2.adgo-infra.com/api/v4')
+L2M2_API_KEY = os.getenv('L2M2_API_KEY', 'l2m2-uyGbDWdn6TGCXvAISfkfHdGd6Z7UsmoCtLD4y1ARRRU')
+L2M2_COMPLETIONS_ENDPOINT = f"{L2M2_API_URL}/chat/completions"
 
 def call_l2m2_with_cot_prompt(prompt: str, model: str = "gemini-2.5-flash"):
     """
@@ -175,43 +178,39 @@ def call_l2m2_with_cot_prompt(prompt: str, model: str = "gemini-2.5-flash"):
     Returns:
         The completion text
     """
+    # OpenAI-compatible format
     data = {
-        "cached": True,
-        "context": {
-            "host": "cot-script",
-            "local_user": "script",
-            "property": "cot-execution"
-        },
-        "models": [
-            {
-                "model": model,
-                "temperature": 0.1,
-                "enable_web_search": True,  # Enable web search for research
-            }
-        ],
+        "model": model,
         "messages": [
             {
                 "role": "user",
                 "content": prompt
             }
         ],
+        "temperature": 0.1,
+    }
+    
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {L2M2_API_KEY}'
     }
     
     response = requests.post(
         L2M2_COMPLETIONS_ENDPOINT,
-        headers={'Content-Type': 'application/json'},
+        headers=headers,
         json=data,
-        timeout=30
+        timeout=90
     )
     
     response.raise_for_status()
     result = response.json()
     
-    if result.get("errors") and result["errors"][0]:
-        raise ValueError(f"l2m2 error: {result['errors'][0]}")
+    if result.get("error"):
+        raise ValueError(f"l2m2 error: {result['error']}")
     
-    if "completions" in result and len(result["completions"]) > 0:
-        return result["completions"][0]
+    # OpenAI format: choices[0].message.content
+    if "choices" in result and len(result["choices"]) > 0:
+        return result["choices"][0]["message"]["content"]
     else:
         raise ValueError("No completion in response")
 
@@ -223,9 +222,38 @@ result = call_l2m2_with_cot_prompt(prompt, model="gemini-2.5-flash")
 print(result)
 ```
 
+#### Alternative: Using OpenAI SDK
+
+You can also use the official OpenAI Python SDK with l2m2:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://l2m2.adgo-infra.com/api/v4",
+    api_key="l2m2-uyGbDWdn6TGCXvAISfkfHdGd6Z7UsmoCtLD4y1ARRRU"
+)
+
+response = client.chat.completions.create(
+    model="gemini-2.5-flash",
+    messages=[{"role": "user", "content": "Your prompt here"}],
+    temperature=0.2,
+)
+
+print(response.choices[0].message.content)
+```
+
 ### Example 3: Multi-Step CoT with Manual Step Execution
 
 ```python
+from openai import OpenAI
+
+# Initialize client
+client = OpenAI(
+    base_url="https://l2m2.adgo-infra.com/api/v4",
+    api_key="l2m2-uyGbDWdn6TGCXvAISfkfHdGd6Z7UsmoCtLD4y1ARRRU"
+)
+
 def execute_cot_steps(steps: list, model: str = "gemini-2.5-flash"):
     """
     Execute a series of CoT steps sequentially.
@@ -238,19 +266,29 @@ def execute_cot_steps(steps: list, model: str = "gemini-2.5-flash"):
         List of step results
     """
     results = []
+    context = ""  # Accumulate context from previous steps
     
     for i, step_prompt in enumerate(steps):
         print(f"Executing step {i+1}/{len(steps)}: {step_prompt[:50]}...")
         
-        result = call_l2m2_with_cot_prompt(step_prompt, model=model)
+        # Include context from previous steps
+        full_prompt = f"{context}\n\n{step_prompt}" if context else step_prompt
+        
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": full_prompt}],
+            temperature=0.2,
+        )
+        
+        result = response.choices[0].message.content
         results.append({
             "step": i + 1,
             "prompt": step_prompt,
             "result": result
         })
         
-        # Use result from previous step in next step if needed
-        # You can modify the next step_prompt to include previous results
+        # Add result to context for next step
+        context += f"\n\nStep {i+1} result: {result}"
     
     return results
 
@@ -270,7 +308,19 @@ for r in results:
 
 ## Using l2m2 to Call Models
 
-The finchat codebase uses l2m2 as a unified interface for calling LLM models. Here's how l2m2 integrates with CoT:
+The finchat codebase uses l2m2 as a unified interface for calling LLM models. l2m2 v4 provides an **OpenAI-compatible API**.
+
+### l2m2 v4 Configuration
+
+```python
+# Base URL and API Key
+L2M2_BASE_URL = "https://l2m2.adgo-infra.com/api/v4"
+L2M2_API_KEY = "l2m2-uyGbDWdn6TGCXvAISfkfHdGd6Z7UsmoCtLD4y1ARRRU"
+
+# Endpoints (OpenAI-compatible)
+# Chat completions: POST /chat/completions
+# Responses (structured output): POST /responses
+```
 
 ### Available Models via l2m2
 
@@ -283,40 +333,78 @@ From the finchat codebase, these models are available:
 - `grok-3-latest`
 - `grok-4-latest`
 
-### l2m2 Request Format
+### l2m2 v4 Request Format (OpenAI-compatible)
 
 ```python
+# Headers
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer l2m2-uyGbDWdn6TGCXvAISfkfHdGd6Z7UsmoCtLD4y1ARRRU"
+}
+
+# Request body (OpenAI chat completions format)
 {
-    "cached": True,  # Use caching for efficiency
-    "context": {
-        "host": "your-app-name",
-        "local_user": "username",
-        "property": "context-identifier"
-    },
-    "models": [
-        {
-            "model": "gemini-2.5-flash",
-            "temperature": 0.1,
-            "enable_web_search": True,  # Enable web search grounding
-        }
-    ],
+    "model": "gemini-2.5-flash",
     "messages": [
         {
             "role": "user",
             "content": "Your prompt here"
         }
-    ]
+    ],
+    "temperature": 0.1
 }
 ```
 
-### Response Format
+### Response Format (OpenAI-compatible)
 
 ```python
 {
-    "completions": ["The model's response text"],
-    "tokens_used": [[input_tokens, output_tokens]],
-    "errors": [null]  # null if no error, error message otherwise
+    "id": "chatcmpl-xxx",
+    "object": "chat.completion",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "The model's response text"
+            },
+            "finish_reason": "stop"
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 100,
+        "completion_tokens": 50,
+        "total_tokens": 150
+    }
 }
+```
+
+### Structured Output with Pydantic
+
+l2m2 v4 supports structured output using the `responses` endpoint:
+
+```python
+from openai import OpenAI
+from pydantic import BaseModel
+
+class FinancialData(BaseModel):
+    company: str
+    revenue: float
+    quarter: str
+
+client = OpenAI(
+    base_url="https://l2m2.adgo-infra.com/api/v4",
+    api_key="l2m2-uyGbDWdn6TGCXvAISfkfHdGd6Z7UsmoCtLD4y1ARRRU"
+)
+
+response = client.responses.parse(
+    model="gemini-2.5-flash",
+    input="Tesla reported $25.2 billion revenue in Q3 2024",
+    text_format=FinancialData,
+    temperature=0.2,
+)
+
+print(response.output_parsed)  # FinancialData(company='Tesla', revenue=25.2, quarter='Q3 2024')
 ```
 
 ## Response Handling
@@ -379,8 +467,9 @@ def handle_cot_response(chat_data):
 
 ### Model Errors
 - Verify the model name is available in l2m2
-- Check l2m2 endpoint is accessible
-- Ensure API credentials are valid
+- Check l2m2 endpoint is accessible: `https://l2m2.adgo-infra.com/api/v4/chat/completions`
+- Ensure API key is valid (Bearer token format)
+- Set `L2M2_API_KEY` environment variable if not using default
 
 ### Timeout Issues
 - Increase polling timeout
