@@ -506,6 +506,10 @@ def classify_content_for_notebooks(content: str) -> list:
     
     try:
         print(f"[NotebookLM] Classifying content via l2m2...")
+        print(f"[NotebookLM] Endpoint: {L2M2_COMPLETIONS_ENDPOINT}")
+        print(f"[NotebookLM] Content length: {len(truncated_content)} chars")
+        print(f"[NotebookLM] Content preview: {truncated_content[:200]}...")
+        
         response = requests.post(
             L2M2_COMPLETIONS_ENDPOINT,
             headers={'Content-Type': 'application/json'},
@@ -513,16 +517,20 @@ def classify_content_for_notebooks(content: str) -> list:
             timeout=60
         )
         
+        print(f"[NotebookLM] Response status: {response.status_code}")
         response.raise_for_status()
+        
         result = response.json()
+        print(f"[NotebookLM] Full l2m2 response: {json.dumps(result, indent=2)[:1000]}...")
         
         if result.get("errors") and result["errors"][0]:
-            print(f"[NotebookLM] l2m2 error: {result['errors'][0]}")
+            error_msg = result["errors"][0]
+            print(f"[NotebookLM] ❌ l2m2 error: {error_msg}")
             return []
         
         if "completions" in result and len(result["completions"]) > 0:
             completion_text = result["completions"][0]
-            print(f"[NotebookLM] Classification result: {completion_text}")
+            print(f"[NotebookLM] ✅ Classification result: {completion_text}")
             
             # Parse the JSON array from the response
             # Handle potential markdown code blocks
@@ -533,25 +541,39 @@ def classify_content_for_notebooks(content: str) -> list:
                 cleaned = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
                 cleaned = cleaned.strip()
             
-            notebooks = json.loads(cleaned)
-            
-            if isinstance(notebooks, list):
-                return notebooks
-            else:
-                print(f"[NotebookLM] Unexpected response format: {notebooks}")
+            try:
+                notebooks = json.loads(cleaned)
+                
+                if isinstance(notebooks, list) and len(notebooks) > 0:
+                    print(f"[NotebookLM] ✅ Parsed {len(notebooks)} notebooks: {notebooks}")
+                    return notebooks
+                else:
+                    print(f"[NotebookLM] ⚠️ Empty or invalid notebook list: {notebooks}")
+                    return []
+            except json.JSONDecodeError as parse_error:
+                print(f"[NotebookLM] ❌ Failed to parse JSON from: {cleaned}")
+                print(f"[NotebookLM] JSON parse error: {parse_error}")
                 return []
         else:
-            print("[NotebookLM] No completion in l2m2 response")
+            print(f"[NotebookLM] ⚠️ No completion in l2m2 response")
+            print(f"[NotebookLM] Response keys: {list(result.keys())}")
             return []
             
+    except requests.exceptions.Timeout as e:
+        print(f"[NotebookLM] ❌ l2m2 request timeout: {e}")
+        return []
     except requests.exceptions.RequestException as e:
-        print(f"[NotebookLM] l2m2 request error: {e}")
+        print(f"[NotebookLM] ❌ l2m2 request error: {e}")
+        print(f"[NotebookLM] Error type: {type(e).__name__}")
         return []
     except json.JSONDecodeError as e:
-        print(f"[NotebookLM] Failed to parse classification response as JSON: {e}")
+        print(f"[NotebookLM] ❌ Failed to parse l2m2 response as JSON: {e}")
+        print(f"[NotebookLM] Response text: {response.text[:500] if 'response' in locals() else 'N/A'}")
         return []
     except Exception as e:
-        print(f"[NotebookLM] Classification error: {e}")
+        print(f"[NotebookLM] ❌ Classification error: {e}")
+        import traceback
+        traceback.print_exc()
         return []
 
 def parse_duration_iso8601(duration: str) -> int:
