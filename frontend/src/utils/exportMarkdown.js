@@ -159,6 +159,86 @@ export const generateMarketDetailsMarkdown = (details) => {
   return { content: md, filename }
 }
 
+export const generateRedditMarkdown = (data, posts) => {
+  const timestamp = getTimestamp()
+  
+  // Sort posts by score (descending)
+  const sortedPosts = [...posts].sort((a, b) => (b.score || 0) - (a.score || 0))
+  
+  // Calculate summary stats
+  const totalPosts = posts.length
+  const totalScore = posts.reduce((sum, p) => sum + (p.score || 0), 0)
+  const totalComments = posts.reduce((sum, p) => sum + (p.num_comments || 0), 0)
+  const avgUpvoteRatio = posts.length > 0 
+    ? (posts.reduce((sum, p) => sum + (p.upvote_ratio || 0), 0) / posts.length * 100).toFixed(1)
+    : 0
+  
+  let md = `# Reddit Analysis Report: r/${data.subreddit}\n\n`
+  md += `**Generated:** ${new Date().toISOString()}\n\n`
+  md += `**Subreddit:** r/${data.subreddit}\n\n`
+  md += `**Posts Analyzed:** ${totalPosts}\n\n`
+  md += `---\n\n`
+  
+  // Summary section
+  md += `## Summary\n\n`
+  md += `- **Total Posts:** ${totalPosts}\n`
+  md += `- **Total Score (Upvotes):** ${totalScore.toLocaleString()}\n`
+  md += `- **Total Comments:** ${totalComments.toLocaleString()}\n`
+  md += `- **Average Upvote Ratio:** ${avgUpvoteRatio}%\n\n`
+  md += `---\n\n`
+  
+  // All posts sorted by score
+  md += `## All Posts (Sorted by Score)\n\n`
+
+  sortedPosts.forEach((post, index) => {
+    md += `### ${index + 1}. ${post.title}\n\n`
+    md += `**URL:** ${post.url || 'N/A'}\n\n`
+    md += `**Author:** u/${post.author || '[deleted]'}\n\n`
+    
+    // Stats
+    const stats = []
+    stats.push(`${(post.score || 0).toLocaleString()} points`)
+    stats.push(`${(post.upvote_ratio * 100).toFixed(0)}% upvoted`)
+    stats.push(`${(post.num_comments || 0).toLocaleString()} comments`)
+    md += `**Stats:** ${stats.join(' | ')}\n\n`
+    
+    // Flair
+    if (post.flair) {
+      md += `**Flair:** ${post.flair}\n\n`
+    }
+    
+    // Post content (self text)
+    if (post.selftext) {
+      md += `**Content:**\n> ${post.selftext.replace(/\n/g, '\n> ').slice(0, 1000)}${post.selftext.length > 1000 ? '...' : ''}\n\n`
+    }
+    
+    // Link URL if not self post
+    if (post.link_url && !post.is_self) {
+      md += `**Link:** ${post.link_url}\n\n`
+    }
+    
+    // Posted date
+    if (post.created_utc) {
+      const date = new Date(post.created_utc * 1000)
+      md += `**Posted:** ${date.toISOString()}\n\n`
+    }
+    
+    // Top comments
+    if (post.comments && post.comments.length > 0) {
+      md += `**Top Comments:**\n\n`
+      post.comments.slice(0, 5).forEach((comment, idx) => {
+        md += `${idx + 1}. **u/${comment.author}** (${comment.score} points):\n`
+        md += `   > ${comment.body.replace(/\n/g, '\n   > ').slice(0, 500)}${comment.body.length > 500 ? '...' : ''}\n\n`
+      })
+    }
+    
+    md += `---\n\n`
+  })
+
+  const filename = `reddit_${data.subreddit}_${timestamp}.md`
+  return { content: md, filename }
+}
+
 export const downloadMarkdown = (content, filename, type = 'unknown', metadata = {}) => {
   // Ensure filename ends with .md
   let safeFilename = filename

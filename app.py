@@ -717,6 +717,145 @@ def youtube_transcript(request: YouTubeRequest):
 
 
 # ============================================================================
+# Reddit API
+# ============================================================================
+
+class RedditAnalysisRequest(BaseModel):
+    subreddit: str
+    post_count: int = 10  # min 5, max 20
+
+@app.post("/reddit/analyze")
+def reddit_analyze(request: RedditAnalysisRequest):
+    """
+    Fetch posts and comments from a Reddit subreddit.
+    Uses Reddit's public JSON API (no authentication required).
+    """
+    import requests
+    
+    # Validate post_count
+    post_count = max(5, min(20, request.post_count))
+    
+    # Clean subreddit name (remove r/ prefix if present)
+    subreddit = request.subreddit.strip()
+    if subreddit.startswith('r/'):
+        subreddit = subreddit[2:]
+    if subreddit.startswith('/r/'):
+        subreddit = subreddit[3:]
+    
+    print(f"[Reddit] Fetching {post_count} posts from r/{subreddit}")
+    
+    all_posts = []
+    errors = []
+    
+    try:
+        # Fetch hot posts from subreddit using Reddit's public JSON API
+        headers = {
+            'User-Agent': 'Sourcer/1.0 (Market Intelligence Platform)'
+        }
+        
+        # Get posts
+        posts_url = f"https://www.reddit.com/r/{subreddit}/hot.json?limit={post_count}"
+        print(f"[Reddit] Fetching posts from: {posts_url}")
+        
+        response = requests.get(posts_url, headers=headers, timeout=30)
+        
+        if response.status_code == 404:
+            raise HTTPException(status_code=404, detail=f"Subreddit r/{subreddit} not found")
+        elif response.status_code == 403:
+            raise HTTPException(status_code=403, detail=f"Subreddit r/{subreddit} is private or quarantined")
+        elif response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=f"Reddit API error: {response.status_code}")
+        
+        data = response.json()
+        posts_data = data.get('data', {}).get('children', [])
+        
+        print(f"[Reddit] Found {len(posts_data)} posts")
+        
+        for post_item in posts_data:
+            post = post_item.get('data', {})
+            
+            # Skip stickied/pinned posts
+            if post.get('stickied', False):
+                continue
+            
+            post_id = post.get('id')
+            permalink = post.get('permalink', '')
+            
+            # Fetch comments for this post
+            comments = []
+            try:
+                comments_url = f"https://www.reddit.com{permalink}.json?limit=10&depth=2"
+                comments_response = requests.get(comments_url, headers=headers, timeout=15)
+                
+                if comments_response.status_code == 200:
+                    comments_data = comments_response.json()
+                    if len(comments_data) > 1:
+                        comment_children = comments_data[1].get('data', {}).get('children', [])
+                        for comment_item in comment_children[:10]:  # Top 10 comments
+                            comment = comment_item.get('data', {})
+                            if comment.get('body') and comment.get('kind') != 'more':
+                                comments.append({
+                                    'author': comment.get('author', '[deleted]'),
+                                    'body': comment.get('body', ''),
+                                    'score': comment.get('score', 0),
+                                    'created_utc': comment.get('created_utc', 0),
+                                    'permalink': f"https://reddit.com{comment.get('permalink', '')}"
+                                })
+                
+                # Small delay to be respectful to Reddit's API
+                time.sleep(0.5)
+                
+            except Exception as e:
+                print(f"[Reddit] Error fetching comments for post {post_id}: {e}")
+            
+            # Build post object
+            post_obj = {
+                'id': post_id,
+                'title': post.get('title', ''),
+                'author': post.get('author', '[deleted]'),
+                'selftext': post.get('selftext', ''),
+                'url': f"https://reddit.com{permalink}",
+                'score': post.get('score', 0),
+                'upvote_ratio': post.get('upvote_ratio', 0),
+                'num_comments': post.get('num_comments', 0),
+                'created_utc': post.get('created_utc', 0),
+                'subreddit': subreddit,
+                'is_self': post.get('is_self', True),
+                'link_url': post.get('url', '') if not post.get('is_self', True) else None,
+                'thumbnail': post.get('thumbnail', ''),
+                'flair': post.get('link_flair_text', ''),
+                'comments': comments
+            }
+            
+            all_posts.append(post_obj)
+        
+        print(f"[Reddit] Successfully fetched {len(all_posts)} posts with comments")
+        
+        # Sort by score (descending)
+        all_posts.sort(key=lambda x: x.get('score', 0), reverse=True)
+        
+        return {
+            "subreddit": subreddit,
+            "post_count": len(all_posts),
+            "posts": all_posts,
+            "errors": errors
+        }
+        
+    except HTTPException:
+        raise
+    except requests.exceptions.Timeout:
+        raise HTTPException(status_code=504, detail="Reddit API timeout")
+    except requests.exceptions.RequestException as e:
+        print(f"[Reddit] Request error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch from Reddit: {str(e)}")
+    except Exception as e:
+        print(f"[Reddit] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
 # NotebookLM API
 # ============================================================================
 

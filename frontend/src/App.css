@@ -382,6 +382,16 @@ body {
   box-shadow: 0 4px 16px rgba(255, 0, 0, 0.3);
 }
 
+.source-card-compact.reddit:hover {
+  border-color: #ff4500;
+  box-shadow: 0 4px 20px rgba(255, 69, 0, 0.2);
+}
+
+.source-card-compact.reddit .source-icon {
+  background: linear-gradient(135deg, #ff4500, #ff5722);
+  box-shadow: 0 4px 16px rgba(255, 69, 0, 0.3);
+}
+
 .source-card-compact span {
   font-size: 0.95rem;
   font-weight: 600;
@@ -422,6 +432,10 @@ body {
 
 .panel-icon.youtube {
   background: linear-gradient(135deg, #ff0000, #cc0000);
+}
+
+.panel-icon.reddit {
+  background: linear-gradient(135deg, #ff4500, #ff5722);
 }
 
 .panel-header h2 {

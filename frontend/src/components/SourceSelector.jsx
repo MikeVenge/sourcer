@@ -1,4 +1,4 @@
-import { MessageCircle, TrendingUp, Youtube } from 'lucide-react'
+import { MessageCircle, TrendingUp, Youtube, MessageSquare } from 'lucide-react'
 
 export default function SourceSelector({ onSelect }) {
   return (
@@ -36,6 +36,16 @@ export default function SourceSelector({ onSelect }) {
             <Youtube color="white" size={32} />
           </div>
           <span>YouTube</span>
+        </div>
+
+        <div 
+          className="source-card-compact reddit"
+          onClick={() => onSelect('reddit')}
+        >
+          <div className="source-icon">
+            <MessageSquare color="white" size={32} />
+          </div>
+          <span>Reddit</span>
         </div>
       </div>
     </div>

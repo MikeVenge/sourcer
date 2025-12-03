@@ -10,6 +10,8 @@ import QueryHistory from './components/QueryHistory'
 import SavedFiles from './components/SavedFiles'
 import YouTubeInput from './components/YouTubeInput'
 import YouTubeResults from './components/YouTubeResults'
+import RedditInput from './components/RedditInput'
+import RedditResults from './components/RedditResults'
 
 // LocalStorage key for persisting tabs
 const STORAGE_KEY = 'sourcer_tabs'
@@ -118,7 +120,13 @@ function App() {
       addTab('polymarket-search', 'Polymarket Search')
     } else if (source === 'youtube') {
       addTab('youtube-input', 'YouTube Transcript')
+    } else if (source === 'reddit') {
+      addTab('reddit-input', 'Reddit Analysis')
     }
+  }
+
+  const handleRedditSubmit = (subreddit, postCount) => {
+    addTab('reddit-results', `r/${subreddit}`, { subreddit, postCount, status: 'loading' })
   }
 
   const handleYouTubeSubmit = (url) => {
@@ -167,6 +175,13 @@ function App() {
         url: historyItem.query.url,
         status: 'loading' 
       })
+    } else if (historyItem.type === 'reddit') {
+      // Re-run Reddit analysis
+      addTab('reddit-results', `r/${historyItem.query.subreddit}`, { 
+        subreddit: historyItem.query.subreddit,
+        postCount: historyItem.query.postCount || 10,
+        status: 'loading' 
+      })
     }
   }
 
@@ -190,6 +205,10 @@ function App() {
         return <YouTubeInput onSubmit={handleYouTubeSubmit} />
       case 'youtube-results':
         return <YouTubeResults data={activeTab.data} />
+      case 'reddit-input':
+        return <RedditInput onSubmit={handleRedditSubmit} />
+      case 'reddit-results':
+        return <RedditResults data={activeTab.data} tabId={activeTab.id} updateTabData={updateTabData} />
       case 'polymarket-search':
         return <PolymarketSearch onSearch={handlePolymarketSearch} />
       case 'polymarket-results':
