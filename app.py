@@ -525,15 +525,38 @@ def classify_content_for_notebooks(content: str) -> tuple:
             print(f"[NotebookLM] ❌ l2m2 error: {error_msg}")
             return [], f"l2m2 API error: {error_msg}"
         
-        # l2m2 responses format: output (can be string or list)
+        # l2m2 responses format: output (can be various formats)
         output = result.get("output")
+        print(f"[NotebookLM] Output field type: {type(output)}")
+        print(f"[NotebookLM] Output field value: {output}")
+        print(f"[NotebookLM] Full result keys: {list(result.keys())}")
+        
+        # Try to extract the completion text from various possible formats
+        completion_text = ""
         if output:
-            # Handle both string and list formats
-            if isinstance(output, list) and len(output) > 0:
-                completion_text = output[0].get("text", "") if isinstance(output[0], dict) else str(output[0])
+            if isinstance(output, str):
+                completion_text = output
+            elif isinstance(output, list) and len(output) > 0:
+                first_item = output[0]
+                if isinstance(first_item, dict):
+                    completion_text = first_item.get("text", "") or first_item.get("content", "") or str(first_item)
+                else:
+                    completion_text = str(first_item)
+            elif isinstance(output, dict):
+                completion_text = output.get("text", "") or output.get("content", "") or json.dumps(output)
             else:
                 completion_text = str(output)
-            print(f"[NotebookLM] ✅ Classification result: {completion_text}")
+        
+        # Also check for alternative response fields
+        if not completion_text:
+            # Check choices format (OpenAI style)
+            choices = result.get("choices", [])
+            if choices and len(choices) > 0:
+                completion_text = choices[0].get("message", {}).get("content", "") or choices[0].get("text", "")
+                print(f"[NotebookLM] Found completion in choices: {completion_text[:100]}...")
+        
+        if completion_text:
+            print(f"[NotebookLM] ✅ Classification result: {completion_text[:200]}...")
             
             # Parse the JSON array from the response
             # Handle potential markdown code blocks
