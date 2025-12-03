@@ -223,6 +223,7 @@ export default function RedditResults({ data, tabId, updateTabData }) {
               content={generateRedditMarkdown(data, posts).content}
               sourceName={`Reddit: r/${data.subreddit}`}
               sourceType="reddit"
+              contentType="text"
             />
           )}
         </div>

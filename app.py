@@ -285,10 +285,9 @@ YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 SEARCHAPI_API_KEY = os.getenv("SEARCHAPI_API_KEY", "uX29PpsVN8nCohWNzmANExdq")
 
-# l2m2 Configuration for AI classification
-L2M2_API_URL = os.getenv("L2M2_API_URL", "https://l2m2.adgo-infra.com/api/v4")
-L2M2_API_KEY = os.getenv("L2M2_API_KEY", "l2m2-uyGbDWdn6TGCXvAISfkfHdGd6Z7UsmoCtLD4y1ARRRU")
-L2M2_COMPLETIONS_ENDPOINT = f"{L2M2_API_URL}/responses"
+# l2m2 Configuration for AI classification (OpenAI SDK compatible)
+L2M2_BASE_URL = "https://l2m2.adgo-infra.com/api/v4"
+L2M2_API_KEY = "l2m2-uyGbDWdn6TGCXvAISfkfHdGd6Z7UsmoCtLD4y1ARRRU"
 
 # NotebookLM Configuration
 NOTEBOOKLM_PROJECT_NUMBER = os.getenv("NOTEBOOKLM_PROJECT_NUMBER", "511538466121")
@@ -462,167 +461,69 @@ PASSAGE TO CLASSIFY:
 '''
 
 
-def classify_content_for_notebooks(content: str) -> tuple:
+def classify_content_for_notebooks(content: str) -> list:
     """
-    Use l2m2 to classify content and determine which notebooks it should be routed to.
+    Use l2m2 (via OpenAI SDK) to classify content and determine which notebooks it should be routed to.
     
     Args:
         content: The markdown/text content to classify
         
     Returns:
-        Tuple of (List of notebook names, error message or None)
+        List of notebook names that the content should be sent to
     """
-    import requests
+    from openai import OpenAI
     import json
-    import hashlib
-    
-    # Validate content
-    if not content or not content.strip():
-        print(f"[NotebookLM] ❌ Empty content provided for classification")
-        return [], "Empty content provided"
     
     # Truncate content if too long (keep first ~8000 chars for classification)
     truncated_content = content[:8000] if len(content) > 8000 else content
     
     full_prompt = NOTEBOOK_CLASSIFICATION_PROMPT + truncated_content + "\n\nIMPORTANT: Respond ONLY with a JSON array of notebook titles. No other text."
     
-    # l2m2 v4 responses endpoint format
-    data = {
-        "model": "gemini-2.5-flash",
-        "input": full_prompt,
-        "temperature": 0.1,
-    }
-    
     try:
-        print(f"[NotebookLM] Classifying content via l2m2...")
-        print(f"[NotebookLM] Endpoint: {L2M2_COMPLETIONS_ENDPOINT}")
+        print(f"[NotebookLM] Classifying content via l2m2 (OpenAI SDK)...")
         print(f"[NotebookLM] Content length: {len(truncated_content)} chars")
-        print(f"[NotebookLM] Content preview: {truncated_content[:200]}...")
         
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {L2M2_API_KEY}'
-        }
-        
-        print(f"[NotebookLM] Making POST request to l2m2 v4 API...")
-        response = requests.post(
-            L2M2_COMPLETIONS_ENDPOINT,
-            headers=headers,
-            json=data,
-            timeout=90
+        client = OpenAI(
+            base_url=L2M2_BASE_URL,
+            api_key=L2M2_API_KEY
         )
-        print(f"[NotebookLM] ✅ Received response from l2m2 (status: {response.status_code})")
         
-        print(f"[NotebookLM] Response status: {response.status_code}")
-        response.raise_for_status()
+        response = client.responses.create(
+            model="gemini-2.5-flash",
+            input=full_prompt,
+            temperature=0.1,
+        )
         
-        result = response.json()
-        print(f"[NotebookLM] Full l2m2 response: {json.dumps(result, indent=2)[:1000]}...")
+        completion_text = response.output_text
+        print(f"[NotebookLM] Classification result: {completion_text[:200]}...")
         
-        # Check for errors
-        if result.get("error"):
-            error_msg = result["error"].get("message", str(result["error"]))
-            print(f"[NotebookLM] ❌ l2m2 error: {error_msg}")
-            return [], f"l2m2 API error: {error_msg}"
+        # Parse the JSON array from the response
+        # Handle potential markdown code blocks
+        cleaned = completion_text.strip()
+        if cleaned.startswith("```"):
+            # Remove markdown code block
+            lines = cleaned.split("\n")
+            cleaned = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
+            cleaned = cleaned.strip()
         
-        # l2m2 responses format: output (can be various formats)
-        output = result.get("output")
-        print(f"[NotebookLM] Output field type: {type(output)}")
-        print(f"[NotebookLM] Output field value: {output}")
-        print(f"[NotebookLM] Full result keys: {list(result.keys())}")
+        notebooks = json.loads(cleaned)
         
-        # Check if output is already a list of notebook names (strings)
-        if isinstance(output, list) and len(output) > 0:
-            # Check if it's already a list of notebook name strings
-            if all(isinstance(item, str) and "V2 -" in item for item in output):
-                print(f"[NotebookLM] ✅ Output is already a list of notebook names: {output}")
-                return output, None
-        
-        # Try to extract the completion text from various possible formats
-        completion_text = ""
-        if output:
-            if isinstance(output, str):
-                completion_text = output
-            elif isinstance(output, list) and len(output) > 0:
-                first_item = output[0]
-                if isinstance(first_item, dict):
-                    completion_text = first_item.get("text", "") or first_item.get("content", "") or json.dumps(first_item)
-                else:
-                    completion_text = str(first_item)
-            elif isinstance(output, dict):
-                completion_text = output.get("text", "") or output.get("content", "") or json.dumps(output)
-            else:
-                completion_text = str(output)
-        
-        # Also check for alternative response fields
-        if not completion_text:
-            # Check choices format (OpenAI style)
-            choices = result.get("choices", [])
-            if choices and len(choices) > 0:
-                completion_text = choices[0].get("message", {}).get("content", "") or choices[0].get("text", "")
-                print(f"[NotebookLM] Found completion in choices: {completion_text[:100]}...")
-        
-        # Ensure completion_text is a string
-        if not isinstance(completion_text, str):
-            completion_text = json.dumps(completion_text) if completion_text else ""
-        
-        if completion_text:
-            print(f"[NotebookLM] ✅ Classification result: {completion_text[:200]}...")
-            
-            # Parse the JSON array from the response
-            # Handle potential markdown code blocks
-            cleaned = completion_text.strip()
-            if cleaned.startswith("```"):
-                # Remove markdown code block
-                lines = cleaned.split("\n")
-                cleaned = "\n".join(lines[1:-1] if lines[-1] == "```" else lines[1:])
-                cleaned = cleaned.strip()
-            
-            try:
-                notebooks = json.loads(cleaned)
-                
-                if isinstance(notebooks, list) and len(notebooks) > 0:
-                    print(f"[NotebookLM] ✅ Parsed {len(notebooks)} notebooks: {notebooks}")
-                    return notebooks, None
-                else:
-                    print(f"[NotebookLM] ⚠️ Empty or invalid notebook list: {notebooks}")
-                    return [], "LLM returned empty notebook list"
-            except json.JSONDecodeError as parse_error:
-                print(f"[NotebookLM] ❌ Failed to parse JSON from: {cleaned}")
-                print(f"[NotebookLM] JSON parse error: {parse_error}")
-                return [], f"Failed to parse LLM response: {cleaned[:100]}"
+        if isinstance(notebooks, list):
+            print(f"[NotebookLM] Parsed {len(notebooks)} notebooks: {notebooks}")
+            return notebooks
         else:
-            print(f"[NotebookLM] ⚠️ No output in l2m2 response")
-            print(f"[NotebookLM] Response keys: {list(result.keys())}")
-            print(f"[NotebookLM] Full response: {json.dumps(result)[:500]}")
-            return [], f"No output in l2m2 response. Keys: {list(result.keys())}"
+            print(f"[NotebookLM] Unexpected response format: {notebooks}")
+            return []
             
-    except requests.exceptions.Timeout as e:
-        print(f"[NotebookLM] ❌ l2m2 request timeout: {e}")
-        print(f"[NotebookLM] This usually means the endpoint is not reachable or taking too long")
-        return [], f"l2m2 request timeout - endpoint may be unreachable"
-    except requests.exceptions.ConnectionError as e:
-        print(f"[NotebookLM] ❌ Cannot connect to l2m2 endpoint: {L2M2_COMPLETIONS_ENDPOINT}")
-        print(f"[NotebookLM] Connection error: {e}")
-        print(f"[NotebookLM] This usually means:")
-        print(f"[NotebookLM]   1. L2M2_API_URL environment variable is not set correctly")
-        print(f"[NotebookLM]   2. The endpoint is not accessible from Railway")
-        print(f"[NotebookLM]   3. The service is down or unreachable")
-        return [], f"Cannot connect to l2m2 at {L2M2_COMPLETIONS_ENDPOINT}. Set L2M2_API_URL env var in Railway."
-    except requests.exceptions.RequestException as e:
-        print(f"[NotebookLM] ❌ l2m2 request error: {e}")
-        print(f"[NotebookLM] Error type: {type(e).__name__}")
-        print(f"[NotebookLM] Error details: {str(e)}")
-        return [], f"l2m2 request error: {type(e).__name__}: {str(e)}"
     except json.JSONDecodeError as e:
-        print(f"[NotebookLM] ❌ Failed to parse l2m2 response as JSON: {e}")
-        print(f"[NotebookLM] Response text: {response.text[:500] if 'response' in locals() else 'N/A'}")
-        return [], f"Failed to parse l2m2 response as JSON"
+        print(f"[NotebookLM] Failed to parse classification response as JSON: {e}")
+        print(f"[NotebookLM] Raw response: {completion_text[:200] if completion_text else 'None'}")
+        return []
     except Exception as e:
-        print(f"[NotebookLM] ❌ Classification error: {e}")
+        print(f"[NotebookLM] Classification error: {type(e).__name__}: {e}")
         import traceback
         traceback.print_exc()
-        return [], f"Classification error: {type(e).__name__}: {str(e)}"
+        return []
 
 def parse_duration_iso8601(duration: str) -> int:
     """Parse ISO 8601 duration (PT1H2M3S) to seconds."""
@@ -1136,24 +1037,15 @@ def notebooklm_add_source(request: NotebookLMRequest):
         print(f"[NotebookLM] STEP 1/2: CLASSIFYING CONTENT")
         print(f"[NotebookLM] Content length: {len(request.content) if request.content else 0} chars")
         print(f"[NotebookLM] Content preview: {request.content[:500] if request.content else '(empty)'}...")
-        classified_notebooks, classification_error = classify_content_for_notebooks(request.content)
+        classified_notebooks = classify_content_for_notebooks(request.content)
         
         if not classified_notebooks:
             print(f"[NotebookLM] ⚠️ No notebooks matched for this content")
-            # Include debug info about l2m2 connection
-            debug_info = {
-                "l2m2_url": L2M2_COMPLETIONS_ENDPOINT,
-                "l2m2_api_url_env": os.getenv("L2M2_API_URL", "NOT SET (using default)"),
-                "content_length": len(request.content) if request.content else 0,
-                "classification_error": classification_error
-            }
-            error_message = classification_error or "Content did not match any notebooks"
             return {
                 "success": False,
-                "message": error_message,
+                "message": "Content did not match any investment-theme notebooks",
                 "classified_notebooks": [],
-                "results": [],
-                "debug": debug_info
+                "results": []
             }
         
         print(f"[NotebookLM] Classified into {len(classified_notebooks)} notebook(s): {classified_notebooks}")

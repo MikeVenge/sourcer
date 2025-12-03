@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BookOpen, Check, AlertCircle, Loader2 } from 'lucide-react'
+import { BookOpen, Check, AlertCircle, Loader2, X } from 'lucide-react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
@@ -28,20 +28,38 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
 
   // Fetch available notebooks when modal opens (only for YouTube)
   useEffect(() => {
-    if (isOpen && showNotebookSelection && availableNotebooks.length === 0) {
-      fetchAvailableNotebooks()
+    if (isOpen && showNotebookSelection) {
+      console.log('[NotebookLMExport] Modal opened, checking if fetch needed...', { 
+        isOpen, 
+        showNotebookSelection, 
+        availableNotebooksLength: availableNotebooks.length,
+        loadingNotebooks,
+        availableNotebooks
+      })
+      // Only fetch if not already loading and we don't have notebooks yet
+      if (!loadingNotebooks && (!availableNotebooks || availableNotebooks.length === 0)) {
+        console.log('[NotebookLMExport] Triggering fetch...')
+        fetchAvailableNotebooks()
+      } else {
+        console.log('[NotebookLMExport] Skipping fetch - already have notebooks or loading')
+      }
     }
   }, [isOpen, showNotebookSelection])
 
   const fetchAvailableNotebooks = async () => {
     setLoadingNotebooks(true)
     try {
+      console.log('[NotebookLMExport] Fetching from:', `${API_URL}/notebooklm/notebooks`)
       const response = await fetch(`${API_URL}/notebooklm/notebooks`)
+      console.log('[NotebookLMExport] Response status:', response.status)
       if (response.ok) {
         const data = await response.json()
+        console.log('[NotebookLMExport] Received notebooks:', data)
         setAvailableNotebooks(data.notebooks || [])
+        console.log('[NotebookLMExport] Set availableNotebooks:', data.notebooks || [])
       } else {
-        console.error('Failed to fetch notebooks')
+        const errorText = await response.text().catch(() => '')
+        console.error('Failed to fetch notebooks:', response.status, errorText)
       }
     } catch (err) {
       console.error('Error fetching notebooks:', err)
@@ -91,7 +109,7 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
             const transcriptText = transcriptData.transcript
               .map(segment => segment.text)
               .join('\n\n')
-            // Include URL in content so it's clear where it came from
+            // Include URL in content so it's clear where it's clear where it came from
             contentToSend = `YouTube Video: ${url}\n\n${transcriptText}`
           } else {
             const errorData = await transcriptResponse.json().catch(() => ({}))
@@ -195,6 +213,8 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
     setSuccess(false)
     setSelectedNotebooks([])
     setNotebooks([])
+    // Reset availableNotebooks so we fetch fresh data next time
+    setAvailableNotebooks([])
   }
 
   // For Twitter/Polymarket, directly export without showing modal
@@ -365,6 +385,23 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
         <div className="notebooklm-modal-header">
           <BookOpen size={24} />
           <h3>Export to NotebookLM</h3>
+          <button
+            onClick={handleClose}
+            style={{
+              marginLeft: 'auto',
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              padding: '0.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            title="Close"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         <div className="notebooklm-modal-body">
@@ -388,6 +425,14 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
           {showNotebookSelection && (
             <div className="form-group">
               <label>Select Notebooks</label>
+              {(() => {
+                console.log('[NotebookLMExport] Rendering notebooks list:', {
+                  loadingNotebooks,
+                  availableNotebooksLength: availableNotebooks.length,
+                  availableNotebooks
+                })
+                return null
+              })()}
               {loadingNotebooks ? (
               <div style={{ padding: '1rem', textAlign: 'center' }}>
                 <Loader2 size={20} className="spin" />
@@ -533,3 +578,14 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+

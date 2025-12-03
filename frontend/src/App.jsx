@@ -125,10 +125,6 @@ function App() {
     }
   }
 
-  const handleRedditSubmit = (subreddit, postCount) => {
-    addTab('reddit-results', `r/${subreddit}`, { subreddit, postCount, status: 'loading' })
-  }
-
   const handleYouTubeSubmit = (url) => {
     // Extract video ID for tab title
     const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/)
@@ -146,6 +142,10 @@ function App() {
 
   const handleMarketSelect = (market) => {
     addTab('market-details', market.title.slice(0, 25) + '...', { market, status: 'loading' })
+  }
+
+  const handleRedditSubmit = (subreddit, postCount) => {
+    addTab('reddit-results', `r/${subreddit}`, { subreddit, postCount, status: 'loading' })
   }
 
   // Handle re-running a query from history
@@ -218,13 +218,10 @@ function App() {
             initialKeyword={activeTab.data?.keyword}
             showResults={true}
             onMarketSelect={handleMarketSelect}
-            tabId={activeTab.id}
-            updateTabData={updateTabData}
-            savedResults={activeTab.data?.results}
           />
         )
       case 'market-details':
-        return <MarketDetails data={activeTab.data} tabId={activeTab.id} updateTabData={updateTabData} />
+        return <MarketDetails data={activeTab.data} />
       default:
         return <div>Unknown tab type</div>
     }
