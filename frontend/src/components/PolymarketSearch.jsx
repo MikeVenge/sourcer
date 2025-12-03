@@ -21,7 +21,7 @@ const formatVolume = (volume) => {
 export default function PolymarketSearch({ onSearch, initialKeyword, showResults, onMarketSelect, tabId, updateTabData, savedResults }) {
   const [keyword, setKeyword] = useState(initialKeyword || '')
   // Check if we have saved results from previous session
-  const hasSavedResults = savedResults && savedResults.length > 0
+  const hasSavedResults = savedResults && Array.isArray(savedResults) && savedResults.length > 0
   const [results, setResults] = useState(hasSavedResults ? savedResults : null)
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -31,13 +31,25 @@ export default function PolymarketSearch({ onSearch, initialKeyword, showResults
   const keywordRef = useRef(initialKeyword || '')
 
   useEffect(() => {
+    // Check if we have saved results
+    const hasSavedResults = savedResults && Array.isArray(savedResults) && savedResults.length > 0
+    
+    // Initialize keywordRef if we have saved results and it matches the current keyword
+    if (hasSavedResults && initialKeyword) {
+      if (keywordRef.current !== initialKeyword) {
+        keywordRef.current = initialKeyword
+      }
+    }
+    
     // Only fetch if we haven't loaded yet OR if the keyword has changed
+    // AND we don't already have saved results
     if (showResults && initialKeyword) {
-      if (!hasLoadedRef.current || keywordRef.current !== initialKeyword) {
+      const shouldFetch = (!hasLoadedRef.current || keywordRef.current !== initialKeyword) && !hasSavedResults
+      if (shouldFetch) {
         fetchResults(initialKeyword, false)
       }
     }
-  }, [showResults, initialKeyword])
+  }, [showResults, initialKeyword, savedResults])
 
   const fetchResults = async (searchKeyword, isRefresh = false) => {
     setLoading(true)

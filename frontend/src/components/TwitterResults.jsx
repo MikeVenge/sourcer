@@ -37,18 +37,22 @@ const formatDate = (dateStr) => {
 }
 
 export default function TwitterResults({ data, tabId, updateTabData }) {
+  // Check if we have saved results from previous session
+  const hasSavedResults = data?.results && data.results.posts && data.results.posts.length > 0
+  
   const [loading, setLoading] = useState(false)
-  const [posts, setPosts] = useState([])
-  const [errors, setErrors] = useState([])
+  const [posts, setPosts] = useState(hasSavedResults ? data.results.posts : [])
+  const [errors, setErrors] = useState(hasSavedResults ? (data.results.errors || []) : [])
   const [processingStatus, setProcessingStatus] = useState('')
   const [saved, setSaved] = useState(false)
   const [apiError, setApiError] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
-  const hasLoadedRef = useRef(false)
+  const hasLoadedRef = useRef(hasSavedResults)
   const dataKeyRef = useRef('')
 
   // Generate a key to identify the data request
   const getDataKey = () => {
+    if (!data) return ''
     return JSON.stringify({
       handles: data.handles,
       topic: data.topic,
@@ -88,6 +92,18 @@ export default function TwitterResults({ data, tabId, updateTabData }) {
       hasLoadedRef.current = true
       dataKeyRef.current = getDataKey()
       
+      // Save results to tab data for persistence
+      if (updateTabData) {
+        updateTabData(tabId, {
+          ...data,
+          results: {
+            posts: result.posts || [],
+            errors: result.errors || []
+          },
+          status: 'loaded'
+        })
+      }
+      
       // Save to query history (only on initial load, not refresh)
       if (!isRefresh) {
         saveQueryToHistory('twitter', {
@@ -107,9 +123,20 @@ export default function TwitterResults({ data, tabId, updateTabData }) {
   }
 
   useEffect(() => {
-    // Only fetch if we haven't loaded yet OR if the data has changed
+    // Check if we have saved results
+    const hasSavedResults = data?.results && data.results.posts && data.results.posts.length > 0
+    
+    // Initialize dataKeyRef if we have saved results and it's not set
     const currentKey = getDataKey()
-    if (!hasLoadedRef.current || dataKeyRef.current !== currentKey) {
+    if (hasSavedResults && !dataKeyRef.current && currentKey) {
+      dataKeyRef.current = currentKey
+    }
+    
+    // Only fetch if we haven't loaded yet OR if the data has changed
+    // AND we don't already have saved results
+    const shouldFetch = (!hasLoadedRef.current || dataKeyRef.current !== currentKey) && !hasSavedResults
+    
+    if (shouldFetch) {
       analyzeTwitter(false)
     }
   }, [data])

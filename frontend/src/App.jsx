@@ -218,6 +218,9 @@ function App() {
             initialKeyword={activeTab.data?.keyword}
             showResults={true}
             onMarketSelect={handleMarketSelect}
+            tabId={activeTab.id}
+            updateTabData={updateTabData}
+            savedResults={activeTab.data?.results}
           />
         )
       case 'market-details':
