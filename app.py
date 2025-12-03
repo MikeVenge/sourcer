@@ -475,6 +475,11 @@ def classify_content_for_notebooks(content: str) -> list:
     import json
     import hashlib
     
+    # Validate content
+    if not content or not content.strip():
+        print(f"[NotebookLM] ❌ Empty content provided for classification")
+        return []
+    
     # Truncate content if too long (keep first ~8000 chars for classification)
     truncated_content = content[:8000] if len(content) > 8000 else content
     
@@ -507,15 +512,23 @@ def classify_content_for_notebooks(content: str) -> list:
     try:
         print(f"[NotebookLM] Classifying content via l2m2...")
         print(f"[NotebookLM] Endpoint: {L2M2_COMPLETIONS_ENDPOINT}")
+        print(f"[NotebookLM] L2M2_API_URL env var: {os.getenv('L2M2_API_URL', 'NOT SET')}")
         print(f"[NotebookLM] Content length: {len(truncated_content)} chars")
         print(f"[NotebookLM] Content preview: {truncated_content[:200]}...")
         
+        # Check if endpoint is configured
+        if not L2M2_API_URL or L2M2_API_URL == "http://l2m2-production":
+            print(f"[NotebookLM] ⚠️ WARNING: L2M2_API_URL is using default value. This may not be accessible from Railway.")
+            print(f"[NotebookLM] ⚠️ Set L2M2_API_URL environment variable to the correct endpoint.")
+        
+        print(f"[NotebookLM] Making POST request to l2m2...")
         response = requests.post(
             L2M2_COMPLETIONS_ENDPOINT,
             headers={'Content-Type': 'application/json'},
             json=data,
             timeout=60
         )
+        print(f"[NotebookLM] ✅ Received response from l2m2")
         
         print(f"[NotebookLM] Response status: {response.status_code}")
         response.raise_for_status()
@@ -561,10 +574,20 @@ def classify_content_for_notebooks(content: str) -> list:
             
     except requests.exceptions.Timeout as e:
         print(f"[NotebookLM] ❌ l2m2 request timeout: {e}")
+        print(f"[NotebookLM] This usually means the endpoint is not reachable or taking too long")
+        return []
+    except requests.exceptions.ConnectionError as e:
+        print(f"[NotebookLM] ❌ connect to l2m2 endpoint: {L2M2_COMPLETIONS_ENDPOINT}")
+        print(f"[NotebookLM] Connection error: {e}")
+        print(f"[NotebookLM] This usually means:")
+        print(f"[NotebookLM]   1. L2M2_API_URL environment variable is not set correctly")
+        print(f"[NotebookLM]   2. The endpoint is not accessible from Railway")
+        print(f"[NotebookLM]   3. The service is down or unreachable")
         return []
     except requests.exceptions.RequestException as e:
         print(f"[NotebookLM] ❌ l2m2 request error: {e}")
         print(f"[NotebookLM] Error type: {type(e).__name__}")
+        print(f"[NotebookLM] Error details: {str(e)}")
         return []
     except json.JSONDecodeError as e:
         print(f"[NotebookLM] ❌ Failed to parse l2m2 response as JSON: {e}")
