@@ -288,7 +288,7 @@ SEARCHAPI_API_KEY = os.getenv("SEARCHAPI_API_KEY", "uX29PpsVN8nCohWNzmANExdq")
 # l2m2 Configuration for AI classification
 L2M2_API_URL = os.getenv("L2M2_API_URL", "https://l2m2.adgo-infra.com/api/v4")
 L2M2_API_KEY = os.getenv("L2M2_API_KEY", "l2m2-uyGbDWdn6TGCXvAISfkfHdGd6Z7UsmoCtLD4y1ARRRU")
-L2M2_COMPLETIONS_ENDPOINT = f"{L2M2_API_URL}/chat/completions"
+L2M2_COMPLETIONS_ENDPOINT = f"{L2M2_API_URL}/responses"
 
 # NotebookLM Configuration
 NOTEBOOKLM_PROJECT_NUMBER = os.getenv("NOTEBOOKLM_PROJECT_NUMBER", "511538466121")
@@ -486,15 +486,10 @@ def classify_content_for_notebooks(content: str) -> tuple:
     
     full_prompt = NOTEBOOK_CLASSIFICATION_PROMPT + truncated_content + "\n\nIMPORTANT: Respond ONLY with a JSON array of notebook titles. No other text."
     
-    # OpenAI-compatible format for l2m2 v4 API
+    # l2m2 v4 responses endpoint format
     data = {
         "model": "gemini-2.5-flash",
-        "messages": [
-            {
-                "role": "user",
-                "content": full_prompt
-            }
-        ],
+        "input": full_prompt,
         "temperature": 0.1,
     }
     
@@ -530,10 +525,9 @@ def classify_content_for_notebooks(content: str) -> tuple:
             print(f"[NotebookLM] ❌ l2m2 error: {error_msg}")
             return [], f"l2m2 API error: {error_msg}"
         
-        # OpenAI format: choices[0].message.content
-        if "choices" in result and len(result["choices"]) > 0:
-            choice = result["choices"][0]
-            completion_text = choice.get("message", {}).get("content", "")
+        # l2m2 responses format: output_text
+        completion_text = result.get("output_text", "")
+        if completion_text:
             print(f"[NotebookLM] ✅ Classification result: {completion_text}")
             
             # Parse the JSON array from the response
@@ -559,10 +553,10 @@ def classify_content_for_notebooks(content: str) -> tuple:
                 print(f"[NotebookLM] JSON parse error: {parse_error}")
                 return [], f"Failed to parse LLM response: {cleaned[:100]}"
         else:
-            print(f"[NotebookLM] ⚠️ No choices in l2m2 response")
+            print(f"[NotebookLM] ⚠️ No output_text in l2m2 response")
             print(f"[NotebookLM] Response keys: {list(result.keys())}")
             print(f"[NotebookLM] Full response: {json.dumps(result)[:500]}")
-            return [], f"No choices in l2m2 response. Keys: {list(result.keys())}"
+            return [], f"No output_text in l2m2 response. Keys: {list(result.keys())}"
             
     except requests.exceptions.Timeout as e:
         print(f"[NotebookLM] ❌ l2m2 request timeout: {e}")
