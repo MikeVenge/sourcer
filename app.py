@@ -461,7 +461,7 @@ PASSAGE TO CLASSIFY:
 '''
 
 
-def classify_content_for_notebooks(content: str) -> list:
+def classify_content_for_notebooks(content: str) -> tuple:
     """
     Use l2m2 to classify content and determine which notebooks it should be routed to.
     
@@ -469,7 +469,7 @@ def classify_content_for_notebooks(content: str) -> list:
         content: The markdown/text content to classify
         
     Returns:
-        List of notebook names that the content should be sent to
+        Tuple of (List of notebook names, error message or None)
     """
     import requests
     import json
@@ -478,7 +478,7 @@ def classify_content_for_notebooks(content: str) -> list:
     # Validate content
     if not content or not content.strip():
         print(f"[NotebookLM] ❌ Empty content provided for classification")
-        return []
+        return [], "Empty content provided"
     
     # Truncate content if too long (keep first ~8000 chars for classification)
     truncated_content = content[:8000] if len(content) > 8000 else content
@@ -539,7 +539,7 @@ def classify_content_for_notebooks(content: str) -> list:
         if result.get("errors") and result["errors"][0]:
             error_msg = result["errors"][0]
             print(f"[NotebookLM] ❌ l2m2 error: {error_msg}")
-            return []
+            return [], f"l2m2 API error: {error_msg}"
         
         if "completions" in result and len(result["completions"]) > 0:
             completion_text = result["completions"][0]
@@ -559,45 +559,45 @@ def classify_content_for_notebooks(content: str) -> list:
                 
                 if isinstance(notebooks, list) and len(notebooks) > 0:
                     print(f"[NotebookLM] ✅ Parsed {len(notebooks)} notebooks: {notebooks}")
-                    return notebooks
+                    return notebooks, None
                 else:
                     print(f"[NotebookLM] ⚠️ Empty or invalid notebook list: {notebooks}")
-                    return []
+                    return [], "LLM returned empty notebook list"
             except json.JSONDecodeError as parse_error:
                 print(f"[NotebookLM] ❌ Failed to parse JSON from: {cleaned}")
                 print(f"[NotebookLM] JSON parse error: {parse_error}")
-                return []
+                return [], f"Failed to parse LLM response: {cleaned[:100]}"
         else:
             print(f"[NotebookLM] ⚠️ No completion in l2m2 response")
             print(f"[NotebookLM] Response keys: {list(result.keys())}")
-            return []
+            return [], f"No completion in l2m2 response. Keys: {list(result.keys())}"
             
     except requests.exceptions.Timeout as e:
         print(f"[NotebookLM] ❌ l2m2 request timeout: {e}")
         print(f"[NotebookLM] This usually means the endpoint is not reachable or taking too long")
-        return []
+        return [], f"l2m2 request timeout - endpoint may be unreachable"
     except requests.exceptions.ConnectionError as e:
-        print(f"[NotebookLM] ❌ connect to l2m2 endpoint: {L2M2_COMPLETIONS_ENDPOINT}")
+        print(f"[NotebookLM] ❌ Cannot connect to l2m2 endpoint: {L2M2_COMPLETIONS_ENDPOINT}")
         print(f"[NotebookLM] Connection error: {e}")
         print(f"[NotebookLM] This usually means:")
         print(f"[NotebookLM]   1. L2M2_API_URL environment variable is not set correctly")
         print(f"[NotebookLM]   2. The endpoint is not accessible from Railway")
         print(f"[NotebookLM]   3. The service is down or unreachable")
-        return []
+        return [], f"Cannot connect to l2m2 at {L2M2_COMPLETIONS_ENDPOINT}. Set L2M2_API_URL env var in Railway."
     except requests.exceptions.RequestException as e:
         print(f"[NotebookLM] ❌ l2m2 request error: {e}")
         print(f"[NotebookLM] Error type: {type(e).__name__}")
         print(f"[NotebookLM] Error details: {str(e)}")
-        return []
+        return [], f"l2m2 request error: {type(e).__name__}: {str(e)}"
     except json.JSONDecodeError as e:
         print(f"[NotebookLM] ❌ Failed to parse l2m2 response as JSON: {e}")
         print(f"[NotebookLM] Response text: {response.text[:500] if 'response' in locals() else 'N/A'}")
-        return []
+        return [], f"Failed to parse l2m2 response as JSON"
     except Exception as e:
         print(f"[NotebookLM] ❌ Classification error: {e}")
         import traceback
         traceback.print_exc()
-        return []
+        return [], f"Classification error: {type(e).__name__}: {str(e)}"
 
 def parse_duration_iso8601(duration: str) -> int:
     """Parse ISO 8601 duration (PT1H2M3S) to seconds."""
@@ -1111,15 +1111,24 @@ def notebooklm_add_source(request: NotebookLMRequest):
         print(f"[NotebookLM] STEP 1/2: CLASSIFYING CONTENT")
         print(f"[NotebookLM] Content length: {len(request.content) if request.content else 0} chars")
         print(f"[NotebookLM] Content preview: {request.content[:500] if request.content else '(empty)'}...")
-        classified_notebooks = classify_content_for_notebooks(request.content)
+        classified_notebooks, classification_error = classify_content_for_notebooks(request.content)
         
         if not classified_notebooks:
             print(f"[NotebookLM] ⚠️ No notebooks matched for this content")
+            # Include debug info about l2m2 connection
+            debug_info = {
+                "l2m2_url": L2M2_COMPLETIONS_ENDPOINT,
+                "l2m2_api_url_env": os.getenv("L2M2_API_URL", "NOT SET (using default)"),
+                "content_length": len(request.content) if request.content else 0,
+                "classification_error": classification_error
+            }
+            error_message = classification_error or "Content did not match any notebooks"
             return {
                 "success": False,
-                "message": "Content did not match any investment-theme notebooks",
+                "message": error_message,
                 "classified_notebooks": [],
-                "results": []
+                "results": [],
+                "debug": debug_info
             }
         
         print(f"[NotebookLM] Classified into {len(classified_notebooks)} notebook(s): {classified_notebooks}")
