@@ -286,8 +286,9 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 SEARCHAPI_API_KEY = os.getenv("SEARCHAPI_API_KEY", "uX29PpsVN8nCohWNzmANExdq")
 
 # l2m2 Configuration for AI classification
-L2M2_API_URL = os.getenv("L2M2_API_URL", "http://l2m2-production")
-L2M2_COMPLETIONS_ENDPOINT = f"{L2M2_API_URL}/api/v1/completions/"
+L2M2_API_URL = os.getenv("L2M2_API_URL", "https://l2m2.adgo-infra.com/api/v4")
+L2M2_API_KEY = os.getenv("L2M2_API_KEY", "l2m2-uyGbDWdn6TGCXvAISfkfHdGd6Z7UsmoCtLD4y1ARRRU")
+L2M2_COMPLETIONS_ENDPOINT = f"{L2M2_API_URL}/chat/completions"
 
 # NotebookLM Configuration
 NOTEBOOKLM_PROJECT_NUMBER = os.getenv("NOTEBOOKLM_PROJECT_NUMBER", "511538466121")
@@ -483,52 +484,39 @@ def classify_content_for_notebooks(content: str) -> tuple:
     # Truncate content if too long (keep first ~8000 chars for classification)
     truncated_content = content[:8000] if len(content) > 8000 else content
     
-    full_prompt = NOTEBOOK_CLASSIFICATION_PROMPT + truncated_content
+    full_prompt = NOTEBOOK_CLASSIFICATION_PROMPT + truncated_content + "\n\nIMPORTANT: Respond ONLY with a JSON array of notebook titles. No other text."
     
-    # Create a unique cache key based on content hash to avoid stale cached responses
-    content_hash = hashlib.md5(truncated_content.encode()).hexdigest()[:8]
-    
+    # OpenAI-compatible format for l2m2 v4 API
     data = {
-        "cached": False,  # Disable caching to ensure fresh classification
-        "context": {
-            "host": "sourcer",
-            "local_user": "notebooklm-router",
-            "property": f"content-classification-{content_hash}"
-        },
-        "models": [
-            {
-                "model": "gemini-2.5-pro",
-                "temperature": 0.1,
-            }
-        ],
+        "model": "gemini-2.5-flash",
         "messages": [
             {
                 "role": "user",
-                "content": full_prompt + "\n\nIMPORTANT: Respond ONLY with a JSON array of notebook titles. No other text."
+                "content": full_prompt
             }
         ],
+        "temperature": 0.1,
     }
     
     try:
         print(f"[NotebookLM] Classifying content via l2m2...")
         print(f"[NotebookLM] Endpoint: {L2M2_COMPLETIONS_ENDPOINT}")
-        print(f"[NotebookLM] L2M2_API_URL env var: {os.getenv('L2M2_API_URL', 'NOT SET')}")
         print(f"[NotebookLM] Content length: {len(truncated_content)} chars")
         print(f"[NotebookLM] Content preview: {truncated_content[:200]}...")
         
-        # Check if endpoint is configured
-        if not L2M2_API_URL or L2M2_API_URL == "http://l2m2-production":
-            print(f"[NotebookLM] ⚠️ WARNING: L2M2_API_URL is using default value. This may not be accessible from Railway.")
-            print(f"[NotebookLM] ⚠️ Set L2M2_API_URL environment variable to the correct endpoint.")
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {L2M2_API_KEY}'
+        }
         
-        print(f"[NotebookLM] Making POST request to l2m2...")
+        print(f"[NotebookLM] Making POST request to l2m2 v4 API...")
         response = requests.post(
             L2M2_COMPLETIONS_ENDPOINT,
-            headers={'Content-Type': 'application/json'},
+            headers=headers,
             json=data,
-            timeout=60
+            timeout=90
         )
-        print(f"[NotebookLM] ✅ Received response from l2m2")
+        print(f"[NotebookLM] ✅ Received response from l2m2 (status: {response.status_code})")
         
         print(f"[NotebookLM] Response status: {response.status_code}")
         response.raise_for_status()
@@ -536,13 +524,16 @@ def classify_content_for_notebooks(content: str) -> tuple:
         result = response.json()
         print(f"[NotebookLM] Full l2m2 response: {json.dumps(result, indent=2)[:1000]}...")
         
-        if result.get("errors") and result["errors"][0]:
-            error_msg = result["errors"][0]
+        # Check for errors
+        if result.get("error"):
+            error_msg = result["error"].get("message", str(result["error"]))
             print(f"[NotebookLM] ❌ l2m2 error: {error_msg}")
             return [], f"l2m2 API error: {error_msg}"
         
-        if "completions" in result and len(result["completions"]) > 0:
-            completion_text = result["completions"][0]
+        # OpenAI format: choices[0].message.content
+        if "choices" in result and len(result["choices"]) > 0:
+            choice = result["choices"][0]
+            completion_text = choice.get("message", {}).get("content", "")
             print(f"[NotebookLM] ✅ Classification result: {completion_text}")
             
             # Parse the JSON array from the response
@@ -568,9 +559,10 @@ def classify_content_for_notebooks(content: str) -> tuple:
                 print(f"[NotebookLM] JSON parse error: {parse_error}")
                 return [], f"Failed to parse LLM response: {cleaned[:100]}"
         else:
-            print(f"[NotebookLM] ⚠️ No completion in l2m2 response")
+            print(f"[NotebookLM] ⚠️ No choices in l2m2 response")
             print(f"[NotebookLM] Response keys: {list(result.keys())}")
-            return [], f"No completion in l2m2 response. Keys: {list(result.keys())}"
+            print(f"[NotebookLM] Full response: {json.dumps(result)[:500]}")
+            return [], f"No choices in l2m2 response. Keys: {list(result.keys())}"
             
     except requests.exceptions.Timeout as e:
         print(f"[NotebookLM] ❌ l2m2 request timeout: {e}")
