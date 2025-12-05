@@ -42,13 +42,8 @@ def run_cot_v2(session_id: str, accounts: list, topic: str, timeframe: str, post
     }
     
     # Step 1: Execute COT
-    print(f"Executing COT with session: {session_id}")
-    print(f"Parameters:")
-    print(f"  accounts: {accounts_str}")
-    print(f"  topic: {topic}")
-    print(f"  timeframe: {timeframe}")
-    print(f"  post_count: {post_count}")
-    print(f"  Payload: {payload}")
+    print(f"[Twitter]   Executing COT API call...")
+    print(f"[Twitter]   Parameters: topic='{topic}', timeframe='{timeframe}', post_count={post_count}")
     
     response = requests.post(
         f"{base_url}/api/v2/sessions/run-cot/{session_id}/",
@@ -57,14 +52,15 @@ def run_cot_v2(session_id: str, accounts: list, topic: str, timeframe: str, post
     )
     response.raise_for_status()
     new_session_id = response.json()['id']
-    print(f"New session created: {new_session_id}")
+    print(f"[Twitter]   COT session created: {new_session_id}")
     
     # Step 2: Poll for results
     results_url = f"{base_url}/api/v2/sessions/{new_session_id}/results/"
     start_time = time.time()
     poll_interval = 10  # seconds
+    last_status = None
     
-    print("Polling for results...")
+    print(f"[Twitter]   Polling for results (timeout: {timeout}s)...")
     while time.time() - start_time < timeout:
         response = requests.get(results_url, headers=headers)
         response.raise_for_status()
@@ -74,11 +70,15 @@ def run_cot_v2(session_id: str, accounts: list, topic: str, timeframe: str, post
         results = data.get('results', [])
         
         elapsed = int(time.time() - start_time)
-        print(f"  [{elapsed}s] Status: {status}")
+        
+        # Only print if status changed or every 30 seconds
+        if status != last_status or elapsed % 30 == 0:
+            print(f"[Twitter]   [{elapsed}s] Status: {status}")
+            last_status = status
         
         # Check if completed
         if status == 'idle' and len(results) > 0:
-            print(f"Completed after {elapsed} seconds")
+            print(f"[Twitter]   ✅ COT completed after {elapsed} seconds")
             return results[0]['content']
         
         time.sleep(poll_interval)
@@ -195,14 +195,21 @@ def fetch_all_posts(urls: list) -> list:
         List of dictionaries with post content
     """
     results = []
+    total_urls = len(urls)
+    
     for i, url in enumerate(urls, 1):
-        print(f"\nFetching post {i}/{len(urls)}: {url}")
+        print(f"[Twitter]   Fetching post {i}/{total_urls}...")
         result = fetch_x_post_content(url)
         results.append(result)
         if 'error' not in result:
-            print(f"  ✓ Fetched successfully")
+            views = result.get('views', 0)
+            likes = result.get('likes', 0)
+            print(f"[Twitter]   ✓ Post {i}/{total_urls} fetched: {views:,} views, {likes:,} likes")
         else:
-            print(f"  ✗ Error: {result.get('error', 'Unknown error')}")
+            print(f"[Twitter]   ✗ Post {i}/{total_urls} failed: {result.get('error', 'Unknown error')}")
+    
+    successful = sum(1 for r in results if 'error' not in r)
+    print(f"[Twitter]   Posts fetched: {successful}/{total_urls} successful")
     
     return results
 

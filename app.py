@@ -187,14 +187,30 @@ def twitter_analyze(request: TwitterAnalysisRequest):
     
     # Clean handles (remove @ if present)
     handles = [h.lstrip('@') for h in request.handles]
+    total_accounts = len(handles)
     
     # Convert timeframe to string format expected by COT API
     # Format: "last X days" or "last X week"
     timeframe_str = f"last {request.timeframe} days"
     
-    for handle in handles:
+    print(f"")
+    print(f"=" * 60)
+    print(f"[Twitter] STARTING ANALYSIS")
+    print(f"=" * 60)
+    print(f"[Twitter] Total accounts: {total_accounts}")
+    print(f"[Twitter] Topic: {request.topic}")
+    print(f"[Twitter] Timeframe: {timeframe_str}")
+    print(f"[Twitter] Max posts per account: {request.post_count}")
+    print(f"=" * 60)
+    
+    for idx, handle in enumerate(handles, 1):
+        print(f"")
+        print(f"[Twitter] Processing account {idx}/{total_accounts}: @{handle}")
+        print(f"[Twitter] ──────────────────────────────────────────────")
+        
         try:
             # Call COT API for this handle
+            print(f"[Twitter] Calling FinChat COT API...")
             result = run_cot_v2(
                 session_id=TWITTER_COT_SESSION_ID,
                 accounts=[f"@{handle}"],
@@ -205,32 +221,55 @@ def twitter_analyze(request: TwitterAnalysisRequest):
             )
             
             # Extract X URLs from the result
+            print(f"[Twitter] Extracting X URLs from COT result...")
             urls = extract_x_urls(result)
+            print(f"[Twitter] Found {len(urls)} X URLs for @{handle}")
             
             if urls:
                 # Fetch full content for each post
+                print(f"[Twitter] Fetching post content ({len(urls)} posts)...")
                 posts = fetch_all_posts(urls)
+                
+                successful_posts = 0
+                failed_posts = 0
                 
                 # Add source handle to each post
                 for post in posts:
                     post['source_handle'] = f"@{handle}"
                     if 'error' not in post:
                         all_posts.append(post)
+                        successful_posts += 1
                     else:
+                        failed_posts += 1
                         errors.append({
                             'handle': handle,
                             'url': post.get('url'),
                             'error': post.get('error')
                         })
+                
+                print(f"[Twitter] ✅ @{handle}: {successful_posts} posts fetched successfully, {failed_posts} failed")
+                print(f"[Twitter] Total posts collected so far: {len(all_posts)}")
+            else:
+                print(f"[Twitter] ⚠️  @{handle}: No URLs found in COT result")
             
             # Small delay between handles to be respectful
             time.sleep(1)
             
         except Exception as e:
+            print(f"[Twitter] ❌ @{handle}: Error - {str(e)}")
             errors.append({
                 'handle': handle,
                 'error': str(e)
             })
+    
+    print(f"")
+    print(f"=" * 60)
+    print(f"[Twitter] ANALYSIS COMPLETE")
+    print(f"=" * 60)
+    print(f"[Twitter] Accounts processed: {total_accounts - len(errors)}/{total_accounts}")
+    print(f"[Twitter] Total posts collected: {len(all_posts)}")
+    print(f"[Twitter] Total errors: {len(errors)}")
+    print(f"=" * 60)
     
     # Sort posts by views (descending)
     all_posts.sort(key=lambda x: x.get('views', 0), reverse=True)
@@ -288,6 +327,41 @@ SEARCHAPI_API_KEY = os.getenv("SEARCHAPI_API_KEY", "uX29PpsVN8nCohWNzmANExdq")
 # l2m2 Configuration for AI classification (OpenAI SDK compatible)
 L2M2_BASE_URL = "https://l2m2.adgo-infra.com/api/v4"
 L2M2_API_KEY = "l2m2-uyGbDWdn6TGCXvAISfkfHdGd6Z7UsmoCtLD4y1ARRRU"
+
+# Bucketeer Configuration
+BUCKETEER_BASE_URL = os.getenv("BUCKETEER_BASE_URL", "https://bucketeer.adgo-infra.com/")
+BUCKETEER_API_KEY = os.getenv("BUCKETEER_API_KEY", "bcktr-wxFrNg7Co6MbtvQdtpk39lK0TPALbW5T")
+
+
+def clean_unicode_for_bucketeer(text: str) -> str:
+    """
+    Clean Unicode surrogate characters from text for Bucketeer API.
+    Bucketeer doesn't allow surrogate characters (emojis encoded as surrogate pairs).
+    
+    Args:
+        text: The text content to clean
+        
+    Returns:
+        Cleaned text without surrogate characters
+    """
+    try:
+        # Encode to UTF-8 with surrogatepass to handle surrogates, then decode with replace
+        # This removes invalid surrogate pairs
+        cleaned = text.encode('utf-8', 'surrogatepass').decode('utf-8', 'replace')
+        return cleaned
+    except Exception as e:
+        print(f"[Bucketeer] Warning: Error cleaning Unicode: {e}")
+        # Fallback: try to remove surrogate characters manually
+        try:
+            # Remove surrogate pairs (U+D800 to U+DFFF)
+            cleaned = ''.join(
+                char for char in text 
+                if not ('\ud800' <= char <= '\udfff')
+            )
+            return cleaned
+        except:
+            # Last resort: return as-is
+            return text
 
 # NotebookLM Configuration
 NOTEBOOKLM_PROJECT_NUMBER = os.getenv("NOTEBOOKLM_PROJECT_NUMBER", "511538466121")
@@ -474,8 +548,11 @@ def classify_content_for_notebooks(content: str) -> list:
     from openai import OpenAI
     import json
     
+    # Clean Unicode surrogate characters before processing
+    cleaned_content = clean_unicode_for_bucketeer(content)
+    
     # Truncate content if too long (keep first ~8000 chars for classification)
-    truncated_content = content[:8000] if len(content) > 8000 else content
+    truncated_content = cleaned_content[:8000] if len(cleaned_content) > 8000 else cleaned_content
     
     full_prompt = NOTEBOOK_CLASSIFICATION_PROMPT + truncated_content + "\n\nIMPORTANT: Respond ONLY with a JSON array of notebook titles. No other text."
     
@@ -667,6 +744,12 @@ def youtube_transcript(request: YouTubeRequest):
         print(f"[YouTube] Title: {video_info['title']}")
         print(f"[YouTube] Transcript segments: {len(transcript)}")
         print(f"[YouTube] Original URL: {request.url}")
+        
+        # Print first 200 words of transcript
+        all_text = " ".join([segment.get("text", "") for segment in transcript])
+        words = all_text.split()
+        first_200_words = " ".join(words[:200])
+        print(f"[YouTube] First 200 words of transcript: {first_200_words}")
         
         return {
             "video_id": video_id,
@@ -1150,6 +1233,131 @@ def notebooklm_config():
         "location": NOTEBOOKLM_LOCATION,
         "endpoint_location": NOTEBOOKLM_ENDPOINT_LOCATION
     }
+
+
+# ============================================================================
+# Bucketeer API
+# ============================================================================
+
+class BucketeerRequest(BaseModel):
+    content: str
+    source_name: Optional[str] = None
+    source_type: Optional[str] = None
+    content_type: Optional[str] = None
+    url: Optional[str] = None
+
+
+@app.post("/bucketeer/add-content")
+def bucketeer_add_content(request: BucketeerRequest):
+    """
+    Add content to Bucketeer. Bucketeer will automatically classify the content
+    into appropriate buckets using vector embeddings.
+    """
+    import requests
+    import traceback
+    import json
+    
+    if not request.content or not request.content.strip():
+        raise HTTPException(status_code=400, detail="Content cannot be empty")
+    
+    try:
+        print(f"[Bucketeer] Adding content to Bucketeer...")
+        print(f"[Bucketeer] Content length: {len(request.content)} chars")
+        print(f"[Bucketeer] Source: {request.source_name}")
+        print(f"[Bucketeer] Type: {request.source_type}")
+        
+        # Ensure content is a string (not a dict/array)
+        if not isinstance(request.content, str):
+            print(f"[Bucketeer] Warning: Content is not a string, serializing to JSON...")
+            request.content = json.dumps(request.content, ensure_ascii=False)
+        
+        # Clean Unicode surrogate characters (emojis) before sending to Bucketeer
+        cleaned_content = clean_unicode_for_bucketeer(request.content)
+        print(f"[Bucketeer] Cleaned content length: {len(cleaned_content)} chars")
+        
+        headers = {
+            "Authorization": f"Bearer {BUCKETEER_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        # Bucketeer API expects just the content field - ensure it's a string
+        payload = {
+            "content": str(cleaned_content)
+        }
+        
+        # Validate payload can be serialized to JSON
+        try:
+            json.dumps(payload)
+        except (TypeError, ValueError) as json_error:
+            print(f"[Bucketeer] ❌ JSON serialization error: {json_error}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Content cannot be serialized to JSON: {str(json_error)}"
+            )
+        
+        # Determine the full endpoint URL
+        # Base URL: https://bucketeer.adgo-infra.com/
+        # Endpoint: /api/v1/content/
+        # Full URL: https://bucketeer.adgo-infra.com/api/v1/content/
+        if BUCKETEER_BASE_URL.endswith('/'):
+            endpoint_url = f"{BUCKETEER_BASE_URL}api/v1/content/"
+        else:
+            endpoint_url = f"{BUCKETEER_BASE_URL}/api/v1/content/"
+        
+        print(f"[Bucketeer] Endpoint: {endpoint_url}")
+        print(f"[Bucketeer] Base URL: {BUCKETEER_BASE_URL}")
+        print(f"[Bucketeer] Payload preview: {request.content[:200]}...")
+        
+        response = requests.post(
+            endpoint_url,
+            json=payload,
+            headers=headers,
+            timeout=30.0
+        )
+        
+        print(f"[Bucketeer] Response status: {response.status_code}")
+        print(f"[Bucketeer] Response headers: {dict(response.headers)}")
+        
+        if response.status_code == 201:
+            try:
+                result = response.json()
+                print(f"[Bucketeer] ✅ Success! Content added with ID: {result.get('id', 'unknown')}")
+                print(f"[Bucketeer] Buckets assigned: {result.get('buckets', [])}")
+                
+                return {
+                    "success": True,
+                    "message": f"Content successfully added to Bucketeer",
+                    "content_id": result.get("id"),
+                    "buckets": result.get("buckets", [])
+                }
+            except ValueError as json_error:
+                print(f"[Bucketeer] ⚠️ Response is not JSON: {response.text[:500]}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Bucketeer returned non-JSON response: {response.text[:200]}"
+                )
+        else:
+            error_text = response.text
+            print(f"[Bucketeer] ❌ Error: {response.status_code}")
+            print(f"[Bucketeer] Response: {error_text[:500]}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Bucketeer API error ({response.status_code}): {error_text[:200]}"
+            )
+            
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except requests.exceptions.RequestException as e:
+        error_msg = str(e)
+        print(f"[Bucketeer] ❌ HTTP error: {error_msg}")
+        print(f"[Bucketeer] Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Failed to connect to Bucketeer: {error_msg}")
+    except Exception as e:
+        error_msg = f"{type(e).__name__}: {str(e)}"
+        print(f"[Bucketeer] ❌ Unexpected error: {error_msg}")
+        print(f"[Bucketeer] Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {error_msg}")
 
 
 # ============================================================================

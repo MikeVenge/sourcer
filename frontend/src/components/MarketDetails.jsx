@@ -4,6 +4,7 @@ import { generateMarketDetailsMarkdown, downloadMarkdown } from '../utils/export
 import DistributionChart from './DistributionChart'
 import PriceHistoryChart from './PriceHistoryChart'
 import NotebookLMExport from './NotebookLMExport'
+import BucketeerExport from './BucketeerExport'
 
 // Backend API URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -251,11 +252,18 @@ export default function MarketDetails({ data, tabId, updateTabData }) {
               {saved ? 'Saved!' : 'Save MD'}
             </button>
             {details && (
-              <NotebookLMExport 
-                content={generateMarketDetailsMarkdown(details).content}
-                sourceName={`Polymarket: ${details.title}`}
-                sourceType="polymarket"
-              />
+              <>
+                <NotebookLMExport 
+                  content={generateMarketDetailsMarkdown(details).content}
+                  sourceName={`Polymarket: ${details.title}`}
+                  sourceType="polymarket"
+                />
+                <BucketeerExport 
+                  content={generateMarketDetailsMarkdown(details).content}
+                  sourceName={`Polymarket: ${details.title}`}
+                  sourceType="polymarket"
+                />
+              </>
             )}
             <a 
               href={details?.url}

@@ -4,6 +4,7 @@ import { downloadMarkdown } from '../utils/exportMarkdown'
 import { saveMarkdownFile } from './SavedFiles'
 import { saveQueryToHistory } from './QueryHistory'
 import NotebookLMExport from './NotebookLMExport'
+import BucketeerExport from './BucketeerExport'
 
 // Backend API URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -384,13 +385,22 @@ export default function YouTubeResults({ data }) {
               {saved ? <Check size={16} /> : <Download size={16} />}
             </button>
             {transcript && (
-              <NotebookLMExport 
-                content={transcript.map(s => s.text).join('\n\n')}
-                sourceName={videoTitle || `YouTube Video ${getVideoId(originalUrl) || 'Video'}`}
-                sourceType="youtube"
-                contentType="youtube"
-                url={originalUrl}
-              />
+              <>
+                <NotebookLMExport 
+                  content={transcript.map(s => s.text).join('\n\n')}
+                  sourceName={videoTitle || `YouTube Video ${getVideoId(originalUrl) || 'Video'}`}
+                  sourceType="youtube"
+                  contentType="youtube"
+                  url={originalUrl}
+                />
+                <BucketeerExport 
+                  content={transcript.map(s => s.text).join('\n\n')}
+                  sourceName={videoTitle || `YouTube Video ${getVideoId(originalUrl) || 'Video'}`}
+                  sourceType="youtube"
+                  contentType="youtube"
+                  url={originalUrl}
+                />
+              </>
             )}
           </div>
         </div>

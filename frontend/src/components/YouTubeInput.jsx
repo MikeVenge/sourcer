@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Send, Youtube, BookOpen } from 'lucide-react'
 import NotebookLMExport from './NotebookLMExport'
+import BucketeerExport from './BucketeerExport'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
@@ -85,13 +86,22 @@ export default function YouTubeInput({ onSubmit }) {
         )}
 
         {videoId && (
-          <NotebookLMExport 
-            content="" 
-            sourceName={videoTitle || `YouTube Video ${videoId}`}
-            sourceType="youtube"
-            contentType="youtube"
-            url={url.trim()}
-          />
+          <>
+            <NotebookLMExport 
+              content="" 
+              sourceName={videoTitle || `YouTube Video ${videoId}`}
+              sourceType="youtube"
+              contentType="youtube"
+              url={url.trim()}
+            />
+            <BucketeerExport 
+              content="" 
+              sourceName={videoTitle || `YouTube Video ${videoId}`}
+              sourceType="youtube"
+              contentType="youtube"
+              url={url.trim()}
+            />
+          </>
         )}
       </form>
     </div>

@@ -3,6 +3,7 @@ import { MessageCircle, Heart, Repeat, Eye, MessageSquare, Download, Check, User
 import { generateTwitterMarkdown, downloadMarkdown } from '../utils/exportMarkdown'
 import { saveQueryToHistory } from './QueryHistory'
 import NotebookLMExport from './NotebookLMExport'
+import BucketeerExport from './BucketeerExport'
 
 // Backend API URL - change this to your deployed URL in production
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -235,12 +236,20 @@ export default function TwitterResults({ data, tabId, updateTabData }) {
             {saved ? 'Saved!' : 'Save MD'}
           </button>
           {posts.length > 0 && (
-            <NotebookLMExport 
-              content={generateTwitterMarkdown(data, posts).content}
-              sourceName={`Twitter: ${data.topic}`}
-              sourceType="twitter"
-              contentType="text"
-            />
+            <>
+              <NotebookLMExport 
+                content={generateTwitterMarkdown(data, posts).content}
+                sourceName={`Twitter: ${data.topic}`}
+                sourceType="twitter"
+                contentType="text"
+              />
+              <BucketeerExport 
+                content={generateTwitterMarkdown(data, posts).content}
+                sourceName={`Twitter: ${data.topic}`}
+                sourceType="twitter"
+                contentType="text"
+              />
+            </>
           )}
         </div>
       </div>

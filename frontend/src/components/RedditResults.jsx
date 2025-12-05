@@ -3,6 +3,7 @@ import { MessageSquare, ArrowUp, MessageCircle, Download, Check, User, AlertCirc
 import { generateRedditMarkdown, downloadMarkdown } from '../utils/exportMarkdown'
 import { saveQueryToHistory } from './QueryHistory'
 import NotebookLMExport from './NotebookLMExport'
+import BucketeerExport from './BucketeerExport'
 
 // Backend API URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -91,7 +92,7 @@ export default function RedditResults({ data, tabId, updateTabData }) {
       saveQueryToHistory('reddit', {
         subreddit: data.subreddit,
         postCount: data.postCount
-      })
+      }, `Reddit: r/${data.subreddit}`)
       
     } catch (err) {
       console.error('Reddit analysis error:', err)
@@ -219,12 +220,20 @@ export default function RedditResults({ data, tabId, updateTabData }) {
             {saved ? 'Saved!' : 'Save MD'}
           </button>
           {posts.length > 0 && (
-            <NotebookLMExport 
-              content={generateRedditMarkdown(data, posts).content}
-              sourceName={`Reddit: r/${data.subreddit}`}
-              sourceType="reddit"
-              contentType="text"
-            />
+            <>
+              <NotebookLMExport 
+                content={generateRedditMarkdown(data, posts).content}
+                sourceName={`Reddit: r/${data.subreddit}`}
+                sourceType="reddit"
+                contentType="text"
+              />
+              <BucketeerExport 
+                content={generateRedditMarkdown(data, posts).content}
+                sourceName={`Reddit: r/${data.subreddit}`}
+                sourceType="reddit"
+                contentType="text"
+              />
+            </>
           )}
         </div>
       </div>
