@@ -77,7 +77,8 @@ export default function TwitterResults({ data, tabId, updateTabData }) {
           handles: data.handles,
           topic: data.topic,
           timeframe: data.timeframe || 5,
-          post_count: 10
+          post_count: 50,
+          processing_mode: data.processingMode || 'batch'
         })
       })
       
@@ -110,7 +111,8 @@ export default function TwitterResults({ data, tabId, updateTabData }) {
         saveQueryToHistory('twitter', {
           handles: data.handles,
           topic: data.topic,
-          timeframe: data.timeframe
+          timeframe: data.timeframe,
+          processingMode: data.processingMode || 'batch'
         }, `Twitter: ${data.handles.slice(0, 2).join(', ')}${data.handles.length > 2 ? '...' : ''}`)
       }
       

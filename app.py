@@ -161,7 +161,8 @@ class TwitterAnalysisRequest(BaseModel):
     handles: List[str]
     topic: str
     timeframe: int = 5  # days
-    post_count: int = 10
+    post_count: int = 50
+    processing_mode: Optional[str] = "batch"  # "batch" or "individual"
 
 
 class TwitterAnalysisResponse(BaseModel):
@@ -179,8 +180,11 @@ def twitter_analyze(request: TwitterAnalysisRequest):
     """
     Analyze Twitter/X accounts using FinChat COT API.
     
-    This calls run_cot_v2() for each handle, extracts X URLs,
-    and fetches full post content using fxtwitter.com.
+    Supports two processing modes:
+    - "batch": Calls run_cot_v2() once with all handles (faster)
+    - "individual": Calls run_cot_v2() once per handle (more detailed tracking)
+    
+    Extracts X URLs and fetches full post content using fxtwitter.com.
     """
     all_posts = []
     errors = []
@@ -193,27 +197,93 @@ def twitter_analyze(request: TwitterAnalysisRequest):
     # Format: "last X days" or "last X week"
     timeframe_str = f"last {request.timeframe} days"
     
+    # Determine processing mode (default to batch)
+    processing_mode = request.processing_mode or "batch"
+    
     print(f"")
     print(f"=" * 60)
     print(f"[Twitter] STARTING ANALYSIS")
     print(f"=" * 60)
+    print(f"[Twitter] Processing mode: {processing_mode.upper()}")
     print(f"[Twitter] Total accounts: {total_accounts}")
+    print(f"[Twitter] Accounts: {', '.join([f'@{h}' for h in handles])}")
     print(f"[Twitter] Topic: {request.topic}")
     print(f"[Twitter] Timeframe: {timeframe_str}")
     print(f"[Twitter] Max posts per account: {request.post_count}")
     print(f"=" * 60)
     
-    for idx, handle in enumerate(handles, 1):
-        print(f"")
-        print(f"[Twitter] Processing account {idx}/{total_accounts}: @{handle}")
-        print(f"[Twitter] ──────────────────────────────────────────────")
-        
+    if processing_mode == "individual":
+        # Process each handle individually (original way)
+        for idx, handle in enumerate(handles, 1):
+            print(f"")
+            print(f"[Twitter] Processing account {idx}/{total_accounts}: @{handle}")
+            print(f"[Twitter] ──────────────────────────────────────────────")
+            
+            try:
+                # Call COT API for this handle
+                print(f"[Twitter] Calling FinChat COT API...")
+                result = run_cot_v2(
+                    session_id=TWITTER_COT_SESSION_ID,
+                    accounts=[f"@{handle}"],
+                    topic=request.topic,
+                    timeframe=timeframe_str,
+                    post_count=request.post_count,
+                    timeout=300
+                )
+                
+                # Extract X URLs from the result
+                print(f"[Twitter] Extracting X URLs from COT result...")
+                urls = extract_x_urls(result)
+                print(f"[Twitter] Found {len(urls)} X URLs for @{handle}")
+                
+                if urls:
+                    # Fetch full content for each post
+                    print(f"[Twitter] Fetching post content ({len(urls)} posts)...")
+                    posts = fetch_all_posts(urls)
+                    
+                    successful_posts = 0
+                    failed_posts = 0
+                    
+                    # Add source handle to each post
+                    for post in posts:
+                        post['source_handle'] = f"@{handle}"
+                        if 'error' not in post:
+                            all_posts.append(post)
+                            successful_posts += 1
+                        else:
+                            failed_posts += 1
+                            errors.append({
+                                'handle': handle,
+                                'url': post.get('url'),
+                                'error': post.get('error')
+                            })
+                    
+                    print(f"[Twitter] ✅ @{handle}: {successful_posts} posts fetched successfully, {failed_posts} failed")
+                    print(f"[Twitter] Total posts collected so far: {len(all_posts)}")
+                else:
+                    print(f"[Twitter] ⚠️  @{handle}: No URLs found in COT result")
+                
+                # Small delay between handles to be respectful
+                time.sleep(1)
+                
+            except Exception as e:
+                print(f"[Twitter] ❌ @{handle}: Error - {str(e)}")
+                errors.append({
+                    'handle': handle,
+                    'error': str(e)
+                })
+    
+    else:
+        # Process all handles in batch (current way)
         try:
-            # Call COT API for this handle
-            print(f"[Twitter] Calling FinChat COT API...")
+            # Call COT API once with all handles
+            print(f"")
+            print(f"[Twitter] Calling FinChat COT API with all {total_accounts} handles...")
+            print(f"[Twitter] ──────────────────────────────────────────────")
+            
             result = run_cot_v2(
                 session_id=TWITTER_COT_SESSION_ID,
-                accounts=[f"@{handle}"],
+                accounts=[f"@{h}" for h in handles],  # All handles at once
                 topic=request.topic,
                 timeframe=timeframe_str,
                 post_count=request.post_count,
@@ -223,7 +293,7 @@ def twitter_analyze(request: TwitterAnalysisRequest):
             # Extract X URLs from the result
             print(f"[Twitter] Extracting X URLs from COT result...")
             urls = extract_x_urls(result)
-            print(f"[Twitter] Found {len(urls)} X URLs for @{handle}")
+            print(f"[Twitter] Found {len(urls)} X URLs total")
             
             if urls:
                 # Fetch full content for each post
@@ -233,32 +303,56 @@ def twitter_analyze(request: TwitterAnalysisRequest):
                 successful_posts = 0
                 failed_posts = 0
                 
-                # Add source handle to each post
+                # Match posts to handles based on author field
+                handle_set = {h.lower() for h in handles}  # For case-insensitive matching
+                
                 for post in posts:
-                    post['source_handle'] = f"@{handle}"
                     if 'error' not in post:
+                        # Try to match post author to one of our handles
+                        author = post.get('author', '').lower().lstrip('@')
+                        matched_handle = None
+                        
+                        # Find matching handle
+                        for handle in handles:
+                            if author == handle.lower():
+                                matched_handle = handle
+                                break
+                        
+                        # If no exact match, try to find partial match
+                        if not matched_handle:
+                            for handle in handles:
+                                if handle.lower() in author or author in handle.lower():
+                                    matched_handle = handle
+                                    break
+                        
+                        # Add source handle (use matched handle or mark as unknown)
+                        if matched_handle:
+                            post['source_handle'] = f"@{matched_handle}"
+                        else:
+                            # If we can't match, check if author is in our handle list
+                            post['source_handle'] = f"@{author}" if author else "Unknown"
+                        
                         all_posts.append(post)
                         successful_posts += 1
                     else:
                         failed_posts += 1
                         errors.append({
-                            'handle': handle,
+                            'handle': 'unknown',
                             'url': post.get('url'),
                             'error': post.get('error')
                         })
                 
-                print(f"[Twitter] ✅ @{handle}: {successful_posts} posts fetched successfully, {failed_posts} failed")
-                print(f"[Twitter] Total posts collected so far: {len(all_posts)}")
+                print(f"[Twitter] ✅ Processing complete: {successful_posts} posts fetched successfully, {failed_posts} failed")
+                print(f"[Twitter] Total posts collected: {len(all_posts)}")
             else:
-                print(f"[Twitter] ⚠️  @{handle}: No URLs found in COT result")
-            
-            # Small delay between handles to be respectful
-            time.sleep(1)
+                print(f"[Twitter] ⚠️  No URLs found in COT result")
             
         except Exception as e:
-            print(f"[Twitter] ❌ @{handle}: Error - {str(e)}")
+            print(f"[Twitter] ❌ Error processing handles: {str(e)}")
+            import traceback
+            traceback.print_exc()
             errors.append({
-                'handle': handle,
+                'handle': 'all',
                 'error': str(e)
             })
     
@@ -266,9 +360,13 @@ def twitter_analyze(request: TwitterAnalysisRequest):
     print(f"=" * 60)
     print(f"[Twitter] ANALYSIS COMPLETE")
     print(f"=" * 60)
-    print(f"[Twitter] Accounts processed: {total_accounts - len(errors)}/{total_accounts}")
+    print(f"[Twitter] Processing mode: {processing_mode.upper()}")
+    print(f"[Twitter] Accounts analyzed: {total_accounts}")
     print(f"[Twitter] Total posts collected: {len(all_posts)}")
     print(f"[Twitter] Total errors: {len(errors)}")
+    if errors:
+        for error in errors:
+            print(f"[Twitter]   Error: {error.get('handle', 'unknown')} - {error.get('error', 'Unknown error')}")
     print(f"=" * 60)
     
     # Sort posts by views (descending)

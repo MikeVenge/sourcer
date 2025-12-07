@@ -5,6 +5,7 @@ export default function TwitterInput({ onSubmit }) {
   const [handles, setHandles] = useState('')
   const [topic, setTopic] = useState('')
   const [timeframe, setTimeframe] = useState('5')
+  const [processingMode, setProcessingMode] = useState('batch') // 'batch' or 'individual'
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -15,7 +16,7 @@ export default function TwitterInput({ onSubmit }) {
       .map(h => h.trim().replace('@', ''))
       .filter(h => h.length > 0)
     
-    onSubmit(handleList, topic, parseInt(timeframe))
+    onSubmit(handleList, topic, parseInt(timeframe), processingMode)
   }
 
   return (
@@ -66,6 +67,35 @@ export default function TwitterInput({ onSubmit }) {
             <span className="timeframe-suffix">days</span>
           </div>
           <p className="form-hint">Look back period for tweets (default: 5 days)</p>
+        </div>
+
+        <div className="form-group">
+          <label>Processing Mode</label>
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input
+                type="radio"
+                name="processingMode"
+                value="batch"
+                checked={processingMode === 'batch'}
+                onChange={(e) => setProcessingMode(e.target.value)}
+              />
+              <span>Batch (All handles at once - faster)</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input
+                type="radio"
+                name="processingMode"
+                value="individual"
+                checked={processingMode === 'individual'}
+                onChange={(e) => setProcessingMode(e.target.value)}
+              />
+              <span>Individual (One handle at a time)</span>
+            </label>
+          </div>
+          <p className="form-hint">
+            Batch: Single API call for all handles (faster). Individual: Separate call per handle (more detailed tracking).
+          </p>
         </div>
 
         <button type="submit" className="submit-btn">

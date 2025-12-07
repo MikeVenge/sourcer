@@ -132,8 +132,8 @@ function App() {
     addTab('youtube-results', `YT: ${videoId}`, { url, status: 'loading' })
   }
 
-  const handleTwitterSubmit = (handles, topic, timeframe) => {
-    addTab('twitter-results', `Twitter: ${topic.slice(0, 20)}...`, { handles, topic, timeframe, status: 'loading' })
+  const handleTwitterSubmit = (handles, topic, timeframe, processingMode = 'batch') => {
+    addTab('twitter-results', `Twitter: ${topic.slice(0, 20)}...`, { handles, topic, timeframe, processingMode, status: 'loading' })
   }
 
   const handlePolymarketSearch = (keyword) => {
@@ -164,6 +164,7 @@ function App() {
         handles: historyItem.query.handles,
         topic: historyItem.query.topic,
         timeframe: historyItem.query.timeframe || 5,
+        processingMode: historyItem.query.processingMode || 'batch',
         status: 'loading' 
       })
     } else if (historyItem.type === 'youtube') {
