@@ -4,7 +4,7 @@ import { Send, MessageCircle } from 'lucide-react'
 export default function TwitterInput({ onSubmit }) {
   const [handles, setHandles] = useState('')
   const [topic, setTopic] = useState('')
-  const [timeframe, setTimeframe] = useState('5')
+  const [timeframe, setTimeframe] = useState('1')
   const [processingMode, setProcessingMode] = useState('batch') // 'batch' or 'individual'
 
   const handleSubmit = (e) => {
@@ -54,19 +54,19 @@ export default function TwitterInput({ onSubmit }) {
         </div>
 
         <div className="form-group">
-          <label>Timeframe (days)</label>
+          <label>Timeframe (weeks)</label>
           <div className="timeframe-input">
             <input
               type="number"
               className="form-input"
               min="1"
-              max="30"
+              max="8"
               value={timeframe}
               onChange={(e) => setTimeframe(e.target.value)}
             />
-            <span className="timeframe-suffix">days</span>
+            <span className="timeframe-suffix">weeks</span>
           </div>
-          <p className="form-hint">Look back period for tweets (default: 5 days)</p>
+          <p className="form-hint">Look back period for tweets (default: 1 week)</p>
         </div>
 
         <div className="form-group">

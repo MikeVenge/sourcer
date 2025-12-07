@@ -160,7 +160,7 @@ class TwitterAnalysisRequest(BaseModel):
     """Request body for Twitter analysis"""
     handles: List[str]
     topic: str
-    timeframe: int = 5  # days
+    timeframe: int = 1  # weeks
     post_count: int = 50
     processing_mode: Optional[str] = "batch"  # "batch" or "individual"
 
@@ -194,8 +194,11 @@ def twitter_analyze(request: TwitterAnalysisRequest):
     total_accounts = len(handles)
     
     # Convert timeframe to string format expected by COT API
-    # Format: "last X days" or "last X week"
-    timeframe_str = f"last {request.timeframe} days"
+    # Format: "last X weeks" or "last X week"
+    if request.timeframe == 1:
+        timeframe_str = "last 1 week"
+    else:
+        timeframe_str = f"last {request.timeframe} weeks"
     
     # Determine processing mode (default to batch)
     processing_mode = request.processing_mode or "batch"

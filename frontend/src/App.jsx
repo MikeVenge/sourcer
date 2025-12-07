@@ -163,7 +163,7 @@ function App() {
       addTab('twitter-results', `Twitter: ${topic.slice(0, 20)}...`, { 
         handles: historyItem.query.handles,
         topic: historyItem.query.topic,
-        timeframe: historyItem.query.timeframe || 5,
+        timeframe: historyItem.query.timeframe || 1,
         processingMode: historyItem.query.processingMode || 'batch',
         status: 'loading' 
       })

@@ -76,7 +76,7 @@ export default function TwitterResults({ data, tabId, updateTabData }) {
         body: JSON.stringify({
           handles: data.handles,
           topic: data.topic,
-          timeframe: data.timeframe || 5,
+          timeframe: data.timeframe || 1,
           post_count: 50,
           processing_mode: data.processingMode || 'batch'
         })
@@ -163,7 +163,7 @@ export default function TwitterResults({ data, tabId, updateTabData }) {
           {processingStatus || `Analyzing tweets for "${data.topic}"...`}
           <br />
           <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem', display: 'block' }}>
-            {data.handles.length} accounts • Last {data.timeframe || 5} days
+            {data.handles.length} accounts • Last {data.timeframe || 1} {data.timeframe === 1 ? 'week' : 'weeks'}
           </span>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem', display: 'block' }}>
             Using FinChat COT API → fxtwitter.com
@@ -215,7 +215,7 @@ export default function TwitterResults({ data, tabId, updateTabData }) {
         <div>
           <h3>Twitter Analysis: "{data.topic}"</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
-            {data.handles.length} accounts • Last {data.timeframe || 5} days • {uniqueAuthors} with posts
+            {data.handles.length} accounts • Last {data.timeframe || 1} {data.timeframe === 1 ? 'week' : 'weeks'} • {uniqueAuthors} with posts
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
