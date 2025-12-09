@@ -1462,6 +1462,432 @@ def bucketeer_add_content(request: BucketeerRequest):
 
 
 # ============================================================================
+# Scheduled Agents API
+# ============================================================================
+
+import json
+import uuid
+from datetime import datetime, timedelta
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+import pytz
+
+AGENTS_FILE = "agents.json"
+scheduler = BackgroundScheduler(timezone=pytz.timezone('America/Los_Angeles'))  # Adjust timezone as needed
+scheduler.start()
+
+def load_agents():
+    """Load agents from JSON file."""
+    if os.path.exists(AGENTS_FILE):
+        try:
+            with open(AGENTS_FILE, 'r') as f:
+                data = json.load(f)
+                return data.get('agents', [])
+        except Exception as e:
+            print(f"[Agents] Error loading agents: {e}")
+            return []
+    return []
+
+def save_agents(agents):
+    """Save agents to JSON file."""
+    try:
+        with open(AGENTS_FILE, 'w') as f:
+            json.dump({'agents': agents}, f, indent=2)
+    except Exception as e:
+        print(f"[Agents] Error saving agents: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save agents: {str(e)}")
+
+def calculate_next_run(schedule_type: str, schedule_time: str, last_run: Optional[str] = None):
+    """Calculate next run time based on schedule."""
+    now = datetime.now(pytz.timezone('America/Los_Angeles'))
+    
+    if schedule_type == "daily":
+        # schedule_time format: "HH:MM"
+        hour, minute = map(int, schedule_time.split(':'))
+        next_run = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        
+        # If time has passed today, schedule for tomorrow
+        if next_run <= now:
+            next_run += timedelta(days=1)
+        
+        return next_run.isoformat()
+    
+    elif schedule_type == "weekly":
+        # schedule_time format: "day_of_week" (0=Monday, 6=Sunday)
+        target_day = int(schedule_time)
+        days_ahead = target_day - now.weekday()
+        
+        if days_ahead <= 0:  # Target day already passed this week
+            days_ahead += 7
+        
+        next_run = now + timedelta(days=days_ahead)
+        next_run = next_run.replace(hour=9, minute=0, second=0, microsecond=0)  # Default to 9 AM
+        
+        return next_run.isoformat()
+    
+    return None
+
+def format_twitter_results_for_bucketeer(data: dict, posts: list) -> str:
+    """Format Twitter analysis results for Bucketeer."""
+    timeframe = data.get('timeframe', 1)
+    timeframe_str = f"{timeframe} {'week' if timeframe == 1 else 'weeks'}"
+    
+    md = f"# Twitter Analysis Report\n\n"
+    md += f"**Generated:** {datetime.now().isoformat()}\n\n"
+    md += f"**Topic:** {data.get('topic', 'N/A')}\n\n"
+    md += f"**Timeframe:** {timeframe_str}\n\n"
+    md += f"**Accounts Analyzed:** {len(data.get('handles', []))}\n\n"
+    md += f"**Total Posts Found:** {len(posts)}\n\n"
+    md += f"---\n\n"
+    
+    # Sort posts by views
+    sorted_posts = sorted(posts, key=lambda x: x.get('views', 0), reverse=True)
+    
+    for i, post in enumerate(sorted_posts[:50], 1):  # Limit to top 50 posts
+        md += f"### {i}. @{post.get('author', 'unknown')}\n\n"
+        md += f"**URL:** {post.get('url', 'N/A')}\n\n"
+        if post.get('text'):
+            md += f"**Content:**\n> {post.get('text', '')[:500]}\n\n"
+        
+        stats = []
+        if post.get('views'): stats.append(f"{post['views']:,} views")
+        if post.get('likes'): stats.append(f"{post['likes']:,} likes")
+        if post.get('retweets'): stats.append(f"{post['retweets']:,} retweets")
+        if stats:
+            md += f"**Stats:** {' | '.join(stats)}\n\n"
+        md += f"---\n\n"
+    
+    return md
+
+def format_reddit_results_for_bucketeer(data: dict, posts: list) -> str:
+    """Format Reddit analysis results for Bucketeer."""
+    md = f"# Reddit Analysis Report: r/{data.get('subreddit', 'unknown')}\n\n"
+    md += f"**Generated:** {datetime.now().isoformat()}\n\n"
+    md += f"**Subreddit:** r/{data.get('subreddit', 'unknown')}\n\n"
+    md += f"**Posts Analyzed:** {len(posts)}\n\n"
+    md += f"---\n\n"
+    
+    sorted_posts = sorted(posts, key=lambda x: x.get('score', 0), reverse=True)
+    
+    for i, post in enumerate(sorted_posts[:30], 1):  # Limit to top 30 posts
+        md += f"### {i}. {post.get('title', 'No title')}\n\n"
+        md += f"**URL:** {post.get('url', 'N/A')}\n\n"
+        md += f"**Author:** u/{post.get('author', '[deleted]')}\n\n"
+        md += f"**Score:** {post.get('score', 0):,} | **Comments:** {post.get('num_comments', 0):,}\n\n"
+        if post.get('selftext'):
+            md += f"**Content:**\n> {post.get('selftext', '')[:500]}\n\n"
+        md += f"---\n\n"
+    
+    return md
+
+def format_polymarket_results_for_bucketeer(keyword: str, results: list) -> str:
+    """Format Polymarket search results for Bucketeer."""
+    md = f"# Polymarket Search Results\n\n"
+    md += f"**Generated:** {datetime.now().isoformat()}\n\n"
+    md += f"**Search Keyword:** {keyword}\n\n"
+    md += f"**Markets Found:** {len(results)}\n\n"
+    md += f"---\n\n"
+    
+    for i, market in enumerate(results[:20], 1):  # Limit to top 20 markets
+        md += f"## {i}. {market.get('title', 'Unknown')}\n\n"
+        md += f"**Slug:** `{market.get('slug', 'N/A')}`\n\n"
+        md += f"**Volume:** ${market.get('volume', 0):,}\n\n"
+        md += f"**Liquidity:** ${market.get('liquidity', 0):,}\n\n"
+        md += f"**URL:** {market.get('url', 'N/A')}\n\n"
+        if market.get('description'):
+            md += f"**Description:**\n{market.get('description', '')[:500]}\n\n"
+        md += f"---\n\n"
+    
+    return md
+
+def execute_agent(agent: dict):
+    """Execute an agent's query and send results to Bucketeer."""
+    agent_id = agent.get('id')
+    agent_name = agent.get('name')
+    source_type = agent.get('source_type')
+    query_params = agent.get('query_params', {})
+    
+    print(f"")
+    print(f"=" * 60)
+    print(f"[Agent] EXECUTING: {agent_name} (ID: {agent_id})")
+    print(f"=" * 60)
+    
+    try:
+        results_content = ""
+        source_name = f"{agent_name} - {datetime.now().strftime('%Y-%m-%d')}"
+        
+        if source_type == "twitter":
+            # Call Twitter analysis
+            request = TwitterAnalysisRequest(**query_params)
+            result = twitter_analyze(request)
+            
+            # Format for Bucketeer
+            results_content = format_twitter_results_for_bucketeer(
+                {'topic': query_params.get('topic'), 'timeframe': query_params.get('timeframe'), 'handles': query_params.get('handles')},
+                result.get('posts', [])
+            )
+            source_type_name = "twitter"
+            
+        elif source_type == "reddit":
+            # Call Reddit analysis
+            request = RedditAnalysisRequest(**query_params)
+            result = reddit_analyze(request)
+            
+            # Format for Bucketeer
+            results_content = format_reddit_results_for_bucketeer(
+                {'subreddit': query_params.get('subreddit')},
+                result.get('posts', [])
+            )
+            source_type_name = "reddit"
+            
+        elif source_type == "polymarket":
+            # Call Polymarket search
+            keyword = query_params.get('keyword', '')
+            results = search_markets(keyword)
+            
+            # Format for Bucketeer
+            results_content = format_polymarket_results_for_bucketeer(keyword, results)
+            source_type_name = "polymarket"
+        
+        else:
+            raise ValueError(f"Unknown source type: {source_type}")
+        
+        # Send to Bucketeer
+        print(f"[Agent] Sending results to Bucketeer...")
+        bucketeer_request = BucketeerRequest(
+            content=results_content,
+            source_name=source_name,
+            source_type=source_type_name,
+            content_type="text"
+        )
+        
+        bucketeer_result = bucketeer_add_content(bucketeer_request)
+        
+        # Update agent last_run
+        agents = load_agents()
+        for a in agents:
+            if a['id'] == agent_id:
+                a['last_run'] = datetime.now().isoformat()
+                a['next_run'] = calculate_next_run(
+                    a['schedule'],
+                    a['schedule_time'],
+                    a['last_run']
+                )
+                save_agents(agents)
+                break
+        
+        print(f"[Agent] ✅ {agent_name} completed successfully")
+        print(f"[Agent] Bucketeer ID: {bucketeer_result.get('content_id', 'unknown')}")
+        
+    except Exception as e:
+        print(f"[Agent] ❌ Error executing {agent_name}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
+class AgentCreateRequest(BaseModel):
+    name: str
+    source_type: str  # "twitter", "reddit", "polymarket"
+    query_params: dict
+    schedule: str  # "daily" or "weekly"
+    schedule_time: str  # "HH:MM" for daily, "0-6" for weekly (0=Monday)
+
+class AgentUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    schedule: Optional[str] = None
+    schedule_time: Optional[str] = None
+    status: Optional[str] = None  # "active" or "paused"
+
+@app.post("/agents/create")
+def create_agent(request: AgentCreateRequest):
+    """Create a new scheduled agent."""
+    agents = load_agents()
+    
+    agent_id = str(uuid.uuid4())
+    next_run = calculate_next_run(request.schedule, request.schedule_time)
+    
+    agent = {
+        "id": agent_id,
+        "name": request.name,
+        "source_type": request.source_type,
+        "query_params": request.query_params,
+        "schedule": request.schedule,
+        "schedule_time": request.schedule_time,
+        "status": "active",
+        "next_run": next_run,
+        "last_run": None,
+        "created_at": datetime.now().isoformat()
+    }
+    
+    agents.append(agent)
+    save_agents(agents)
+    
+    # Schedule the job
+    if request.schedule == "daily":
+        hour, minute = map(int, request.schedule_time.split(':'))
+        scheduler.add_job(
+            execute_agent,
+            trigger=CronTrigger(hour=hour, minute=minute),
+            id=agent_id,
+            args=[agent],
+            replace_existing=True
+        )
+    elif request.schedule == "weekly":
+        day_of_week = int(request.schedule_time)
+        scheduler.add_job(
+            execute_agent,
+            trigger=CronTrigger(day_of_week=day_of_week, hour=9, minute=0),
+            id=agent_id,
+            args=[agent],
+            replace_existing=True
+        )
+    
+    return {
+        "success": True,
+        "agent_id": agent_id,
+        "next_run": next_run,
+        "message": f"Agent '{request.name}' created successfully"
+    }
+
+@app.get("/agents")
+def list_agents():
+    """List all scheduled agents."""
+    agents = load_agents()
+    return {"agents": agents}
+
+@app.get("/agents/{agent_id}")
+def get_agent(agent_id: str):
+    """Get a specific agent by ID."""
+    agents = load_agents()
+    agent = next((a for a in agents if a['id'] == agent_id), None)
+    
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    return agent
+
+@app.put("/agents/{agent_id}")
+def update_agent(agent_id: str, request: AgentUpdateRequest):
+    """Update an agent."""
+    agents = load_agents()
+    agent = next((a for a in agents if a['id'] == agent_id), None)
+    
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    # Update fields
+    if request.name:
+        agent['name'] = request.name
+    if request.schedule:
+        agent['schedule'] = request.schedule
+    if request.schedule_time:
+        agent['schedule_time'] = request.schedule_time
+    if request.status:
+        agent['status'] = request.status
+    
+    # Recalculate next_run if schedule changed
+    if request.schedule or request.schedule_time:
+        agent['next_run'] = calculate_next_run(agent['schedule'], agent['schedule_time'], agent.get('last_run'))
+    
+    # Update scheduler job
+    try:
+        scheduler.remove_job(agent_id)
+    except:
+        pass
+    
+    if agent['status'] == 'active':
+        if agent['schedule'] == "daily":
+            hour, minute = map(int, agent['schedule_time'].split(':'))
+            scheduler.add_job(
+                execute_agent,
+                trigger=CronTrigger(hour=hour, minute=minute),
+                id=agent_id,
+                args=[agent],
+                replace_existing=True
+            )
+        elif agent['schedule'] == "weekly":
+            day_of_week = int(agent['schedule_time'])
+            scheduler.add_job(
+                execute_agent,
+                trigger=CronTrigger(day_of_week=day_of_week, hour=9, minute=0),
+                id=agent_id,
+                args=[agent],
+                replace_existing=True
+            )
+    
+    save_agents(agents)
+    
+    return {"success": True, "agent": agent}
+
+@app.delete("/agents/{agent_id}")
+def delete_agent(agent_id: str):
+    """Delete an agent."""
+    agents = load_agents()
+    agent = next((a for a in agents if a['id'] == agent_id), None)
+    
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    # Remove from scheduler
+    try:
+        scheduler.remove_job(agent_id)
+    except:
+        pass
+    
+    agents = [a for a in agents if a['id'] != agent_id]
+    save_agents(agents)
+    
+    return {"success": True, "message": "Agent deleted successfully"}
+
+@app.post("/agents/{agent_id}/run")
+def run_agent_now(agent_id: str):
+    """Manually trigger an agent run."""
+    agents = load_agents()
+    agent = next((a for a in agents if a['id'] == agent_id), None)
+    
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    # Run in background
+    import threading
+    thread = threading.Thread(target=execute_agent, args=[agent])
+    thread.start()
+    
+    return {"success": True, "message": f"Agent '{agent['name']}' execution started"}
+
+# Load existing agents and schedule them on startup
+def initialize_agents():
+    """Load and schedule all active agents on startup."""
+    agents = load_agents()
+    for agent in agents:
+        if agent.get('status') == 'active':
+            try:
+                if agent['schedule'] == "daily":
+                    hour, minute = map(int, agent['schedule_time'].split(':'))
+                    scheduler.add_job(
+                        execute_agent,
+                        trigger=CronTrigger(hour=hour, minute=minute),
+                        id=agent['id'],
+                        args=[agent],
+                        replace_existing=True
+                    )
+                elif agent['schedule'] == "weekly":
+                    day_of_week = int(agent['schedule_time'])
+                    scheduler.add_job(
+                        execute_agent,
+                        trigger=CronTrigger(day_of_week=day_of_week, hour=9, minute=0),
+                        id=agent['id'],
+                        args=[agent],
+                        replace_existing=True
+                    )
+                print(f"[Agents] Scheduled agent: {agent['name']} (ID: {agent['id']})")
+            except Exception as e:
+                print(f"[Agents] Error scheduling agent {agent['name']}: {e}")
+
+# Initialize agents on startup
+initialize_agents()
+
+
+# ============================================================================
 # Run with uvicorn
 # ============================================================================
 

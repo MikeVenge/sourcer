@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
-import { MessageSquare, ArrowUp, MessageCircle, Download, Check, User, AlertCircle, RefreshCw, ExternalLink } from 'lucide-react'
+import { MessageSquare, ArrowUp, MessageCircle, Download, Check, User, AlertCircle, RefreshCw, ExternalLink, Calendar } from 'lucide-react'
 import { generateRedditMarkdown, downloadMarkdown } from '../utils/exportMarkdown'
 import { saveQueryToHistory } from './QueryHistory'
 import NotebookLMExport from './NotebookLMExport'
 import BucketeerExport from './BucketeerExport'
+import AgentScheduler from './AgentScheduler'
 
 // Backend API URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -47,6 +48,7 @@ export default function RedditResults({ data, tabId, updateTabData }) {
   const [saved, setSaved] = useState(false)
   const [apiError, setApiError] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [showScheduler, setShowScheduler] = useState(false)
   const [expandedPosts, setExpandedPosts] = useState({})
   const hasLoadedRef = useRef(hasSavedResults)
 
@@ -233,10 +235,33 @@ export default function RedditResults({ data, tabId, updateTabData }) {
                 sourceType="reddit"
                 contentType="text"
               />
+              <button
+                className="save-btn"
+                onClick={() => setShowScheduler(true)}
+                title="Schedule Agent"
+              >
+                <Calendar size={16} />
+                Schedule
+              </button>
             </>
           )}
         </div>
       </div>
+
+      {showScheduler && (
+        <AgentScheduler
+          sourceType="reddit"
+          queryParams={{
+            subreddit: data.subreddit,
+            post_count: data.postCount || 10
+          }}
+          onClose={() => setShowScheduler(false)}
+          onSuccess={() => {
+            setShowScheduler(false)
+            alert('Agent scheduled successfully!')
+          }}
+        />
+      )}
 
       {/* Summary Stats */}
       <div style={{

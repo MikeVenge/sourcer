@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
-import { MessageCircle, Heart, Repeat, Eye, MessageSquare, Download, Check, User, AlertCircle, RefreshCw } from 'lucide-react'
+import { MessageCircle, Heart, Repeat, Eye, MessageSquare, Download, Check, User, AlertCircle, RefreshCw, Calendar } from 'lucide-react'
 import { generateTwitterMarkdown, downloadMarkdown } from '../utils/exportMarkdown'
 import { saveQueryToHistory } from './QueryHistory'
 import NotebookLMExport from './NotebookLMExport'
 import BucketeerExport from './BucketeerExport'
+import AgentScheduler from './AgentScheduler'
 
 // Backend API URL - change this to your deployed URL in production
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -48,6 +49,7 @@ export default function TwitterResults({ data, tabId, updateTabData }) {
   const [saved, setSaved] = useState(false)
   const [apiError, setApiError] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [showScheduler, setShowScheduler] = useState(false)
   const hasLoadedRef = useRef(hasSavedResults)
   const dataKeyRef = useRef('')
 
@@ -251,10 +253,36 @@ export default function TwitterResults({ data, tabId, updateTabData }) {
                 sourceType="twitter"
                 contentType="text"
               />
+              <button
+                className="save-btn"
+                onClick={() => setShowScheduler(true)}
+                title="Schedule Agent"
+              >
+                <Calendar size={16} />
+                Schedule
+              </button>
             </>
           )}
         </div>
       </div>
+
+      {showScheduler && (
+        <AgentScheduler
+          sourceType="twitter"
+          queryParams={{
+            handles: data.handles,
+            topic: data.topic,
+            timeframe: data.timeframe || 1,
+            post_count: 50,
+            processing_mode: data.processingMode || 'batch'
+          }}
+          onClose={() => setShowScheduler(false)}
+          onSuccess={() => {
+            setShowScheduler(false)
+            alert('Agent scheduled successfully!')
+          }}
+        />
+      )}
 
       {/* Summary Stats */}
       <div style={{

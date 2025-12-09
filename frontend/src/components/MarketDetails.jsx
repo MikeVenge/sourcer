@@ -5,6 +5,7 @@ import DistributionChart from './DistributionChart'
 import PriceHistoryChart from './PriceHistoryChart'
 import NotebookLMExport from './NotebookLMExport'
 import BucketeerExport from './BucketeerExport'
+import AgentScheduler from './AgentScheduler'
 
 // Backend API URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -55,6 +56,7 @@ export default function MarketDetails({ data, tabId, updateTabData }) {
   const [saved, setSaved] = useState(false)
   const [apiError, setApiError] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [showScheduler, setShowScheduler] = useState(false)
   const hasLoadedRef = useRef(hasSavedDetails) // Mark as loaded if we have saved details
   const slugRef = useRef(hasSavedDetails ? data.market.slug : '')
 
@@ -263,6 +265,14 @@ export default function MarketDetails({ data, tabId, updateTabData }) {
                   sourceName={`Polymarket: ${details.title}`}
                   sourceType="polymarket"
                 />
+                <button
+                  className="save-btn"
+                  onClick={() => setShowScheduler(true)}
+                  title="Schedule Agent"
+                >
+                  <Calendar size={16} />
+                  Schedule
+                </button>
               </>
             )}
             <a 
@@ -278,6 +288,20 @@ export default function MarketDetails({ data, tabId, updateTabData }) {
           </div>
         </div>
       </div>
+
+      {showScheduler && (
+        <AgentScheduler
+          sourceType="polymarket"
+          queryParams={{
+            keyword: data.market.slug || data.market.title || ''
+          }}
+          onClose={() => setShowScheduler(false)}
+          onSuccess={() => {
+            setShowScheduler(false)
+            alert('Agent scheduled successfully!')
+          }}
+        />
+      )}
 
       {/* Distribution Chart */}
       {details?.outcomes && details.outcomes.length >= 3 && (

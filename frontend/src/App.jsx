@@ -12,6 +12,7 @@ import YouTubeInput from './components/YouTubeInput'
 import YouTubeResults from './components/YouTubeResults'
 import RedditInput from './components/RedditInput'
 import RedditResults from './components/RedditResults'
+import AgentList from './components/AgentList'
 
 // LocalStorage key for persisting tabs
 const STORAGE_KEY = 'sourcer_tabs'
@@ -122,6 +123,8 @@ function App() {
       addTab('youtube-input', 'YouTube Transcript')
     } else if (source === 'reddit') {
       addTab('reddit-input', 'Reddit Analysis')
+    } else if (source === 'agents') {
+      addTab('agents', 'Scheduled Agents')
     }
   }
 
@@ -196,8 +199,11 @@ function App() {
             <SourceSelector onSelect={handleSourceSelect} />
             <QueryHistory onSelectQuery={handleHistorySelect} />
             <SavedFiles />
+            <AgentList onRunAgent={addTab} />
           </div>
         )
+      case 'agents':
+        return <AgentList onRunAgent={addTab} />
       case 'twitter-input':
         return <TwitterInput onSubmit={handleTwitterSubmit} />
       case 'twitter-results':

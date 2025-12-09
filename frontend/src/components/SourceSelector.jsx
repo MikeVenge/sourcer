@@ -1,4 +1,4 @@
-import { MessageCircle, TrendingUp, Youtube, MessageSquare } from 'lucide-react'
+import { MessageCircle, TrendingUp, Youtube, MessageSquare, Calendar } from 'lucide-react'
 
 export default function SourceSelector({ onSelect }) {
   return (
@@ -46,6 +46,20 @@ export default function SourceSelector({ onSelect }) {
             <MessageSquare color="white" size={32} />
           </div>
           <span>Reddit</span>
+        </div>
+
+        <div 
+          className="source-card-compact"
+          onClick={() => onSelect('agents')}
+          style={{ 
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)',
+            border: '1px solid rgba(139, 92, 246, 0.3)'
+          }}
+        >
+          <div className="source-icon" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%)' }}>
+            <Calendar color="white" size={32} />
+          </div>
+          <span>Scheduled Agents</span>
         </div>
       </div>
     </div>
