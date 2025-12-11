@@ -177,6 +177,7 @@ class TwitterAnalysisResponse(BaseModel):
 
 
 @app.post("/twitter/analyze")
+@app.post("/twitter/analyze/")  # Handle trailing slash
 def twitter_analyze(request: TwitterAnalysisRequest):
     """
     Analyze Twitter/X accounts using FinChat COT API.
