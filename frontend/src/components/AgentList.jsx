@@ -102,7 +102,15 @@ export default function AgentList({ onRunAgent }) {
         })
 
         if (!response.ok) throw new Error('Failed to run agent')
-        alert('Agent execution started. Check backend logs for progress.')
+        
+        const result = await response.json()
+        if (result.status === 'running') {
+          alert(`⚠️ ${result.message}`)
+        } else if (result.status === 'queued') {
+          alert(`⏳ ${result.message}`)
+        } else {
+          alert(`✅ ${result.message}`)
+        }
       }
     } catch (err) {
       setError(err.message)

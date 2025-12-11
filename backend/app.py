@@ -1954,11 +1954,39 @@ def run_agent_now(agent_id: str):
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
     
-    # Run in background - execute_agent handles locking internally
-    thread = threading.Thread(target=execute_agent, args=[agent], daemon=True)
-    thread.start()
+    agent_name = agent.get('name', 'Unknown')
     
-    return {"success": True, "message": f"Agent '{agent['name']}' execution started"}
+    # Check if agent is already running
+    if agent_id in currently_running_agents:
+        return {
+            "success": False,
+            "message": f"Agent '{agent_name}' is already running",
+            "status": "running",
+            "agent_id": agent_id
+        }
+    
+    # Check if another agent is running (will be queued)
+    if not agent_execution_lock.acquire(blocking=False):
+        # Another agent is running, this one will be queued
+        thread = threading.Thread(target=execute_agent, args=[agent], daemon=True)
+        thread.start()
+        return {
+            "success": True,
+            "message": f"Agent '{agent_name}' queued for execution (another agent is running)",
+            "status": "queued",
+            "agent_id": agent_id
+        }
+    else:
+        # Lock acquired, can run immediately
+        agent_execution_lock.release()
+        thread = threading.Thread(target=execute_agent, args=[agent], daemon=True)
+        thread.start()
+        return {
+            "success": True,
+            "message": f"Agent '{agent_name}' execution started",
+            "status": "started",
+            "agent_id": agent_id
+        }
 
 # Load existing agents and schedule them on startup
 def initialize_agents():
