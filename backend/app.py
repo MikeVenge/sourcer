@@ -1512,21 +1512,35 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 import pytz
 
-AGENTS_FILE = "agents.json"
+# Agents file path - use absolute path to ensure it's found
+AGENTS_FILE = os.path.join(os.path.dirname(__file__), "agents.json")
 # Scheduler timezone: Asia/Bangkok (Thailand Time, UTC+7)
-scheduler = BackgroundScheduler(timezone=pytz.timezone('Asia/Bangkok'))
+bangkok_tz = pytz.timezone('Asia/Bangkok')
+scheduler = BackgroundScheduler(timezone=bangkok_tz)
 scheduler.start()
+print(f"[Scheduler] ✅ Started with timezone: Asia/Bangkok (UTC+7)")
+print(f"[Scheduler] Current time: {datetime.now(bangkok_tz).strftime('%Y-%m-%d %H:%M:%S %Z')}")
 
 def load_agents():
     """Load agents from JSON file."""
+    print(f"[Agents] Loading agents from: {AGENTS_FILE}")
+    print(f"[Agents] File exists: {os.path.exists(AGENTS_FILE)}")
     if os.path.exists(AGENTS_FILE):
         try:
             with open(AGENTS_FILE, 'r') as f:
                 data = json.load(f)
-                return data.get('agents', [])
+                agents = data.get('agents', [])
+                print(f"[Agents] ✅ Loaded {len(agents)} agent(s) from file")
+                return agents
         except Exception as e:
-            print(f"[Agents] Error loading agents: {e}")
+            print(f"[Agents] ❌ Error loading agents: {e}")
+            import traceback
+            traceback.print_exc()
             return []
+    else:
+        print(f"[Agents] ⚠️ Agents file not found at: {AGENTS_FILE}")
+        print(f"[Agents] Current working directory: {os.getcwd()}")
+        print(f"[Agents] __file__ directory: {os.path.dirname(__file__)}")
     return []
 
 def save_agents(agents):
@@ -1771,7 +1785,7 @@ def create_agent(request: AgentCreateRequest):
         hour, minute = map(int, request.schedule_time.split(':'))
         scheduler.add_job(
             execute_agent,
-            trigger=CronTrigger(hour=hour, minute=minute),
+            trigger=CronTrigger(hour=hour, minute=minute, timezone=bangkok_tz),
             id=agent_id,
             args=[agent],
             replace_existing=True
@@ -1780,7 +1794,7 @@ def create_agent(request: AgentCreateRequest):
         day_of_week = int(request.schedule_time)
         scheduler.add_job(
             execute_agent,
-            trigger=CronTrigger(day_of_week=day_of_week, hour=9, minute=0),
+            trigger=CronTrigger(day_of_week=day_of_week, hour=9, minute=0, timezone=bangkok_tz),
             id=agent_id,
             args=[agent],
             replace_existing=True
@@ -1844,7 +1858,7 @@ def update_agent(agent_id: str, request: AgentUpdateRequest):
             hour, minute = map(int, agent['schedule_time'].split(':'))
             scheduler.add_job(
                 execute_agent,
-                trigger=CronTrigger(hour=hour, minute=minute),
+                trigger=CronTrigger(hour=hour, minute=minute, timezone=bangkok_tz),
                 id=agent_id,
                 args=[agent],
                 replace_existing=True
@@ -1853,7 +1867,7 @@ def update_agent(agent_id: str, request: AgentUpdateRequest):
             day_of_week = int(agent['schedule_time'])
             scheduler.add_job(
                 execute_agent,
-                trigger=CronTrigger(day_of_week=day_of_week, hour=9, minute=0),
+                trigger=CronTrigger(day_of_week=day_of_week, hour=9, minute=0, timezone=bangkok_tz),
                 id=agent_id,
                 args=[agent],
                 replace_existing=True
@@ -1910,26 +1924,33 @@ def initialize_agents():
                     hour, minute = map(int, agent['schedule_time'].split(':'))
                     scheduler.add_job(
                         execute_agent,
-                        trigger=CronTrigger(hour=hour, minute=minute),
+                        trigger=CronTrigger(hour=hour, minute=minute, timezone=bangkok_tz),
                         id=agent['id'],
                         args=[agent],
                         replace_existing=True
                     )
+                    print(f"[Agents] ✅ Scheduled daily job for {agent['name']} at {hour:02d}:{minute:02d} Bangkok time")
                 elif agent['schedule'] == "weekly":
                     day_of_week = int(agent['schedule_time'])
                     scheduler.add_job(
                         execute_agent,
-                        trigger=CronTrigger(day_of_week=day_of_week, hour=9, minute=0),
+                        trigger=CronTrigger(day_of_week=day_of_week, hour=9, minute=0, timezone=bangkok_tz),
                         id=agent['id'],
                         args=[agent],
                         replace_existing=True
                     )
+                    print(f"[Agents] ✅ Scheduled weekly job for {agent['name']} on day {day_of_week} at 09:00 Bangkok time")
                 print(f"[Agents] Scheduled agent: {agent['name']} (ID: {agent['id']})")
             except Exception as e:
                 print(f"[Agents] Error scheduling agent {agent['name']}: {e}")
 
 # Initialize agents on startup
-initialize_agents()
+try:
+    initialize_agents()
+    print("[App] ✅ Agents initialized successfully")
+except Exception as e:
+    print(f"[App] ⚠️ Warning: Error initializing agents: {e}")
+    print("[App] Continuing without scheduled agents...")
 
 
 # ============================================================================
