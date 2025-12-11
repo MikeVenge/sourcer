@@ -1521,6 +1521,13 @@ scheduler.start()
 print(f"[Scheduler] ✅ Started with timezone: Asia/Bangkok (UTC+7)")
 print(f"[Scheduler] Current time: {datetime.now(bangkok_tz).strftime('%Y-%m-%d %H:%M:%S %Z')}")
 
+# Agent execution lock and queue to prevent concurrent executions
+import threading
+import queue
+agent_execution_lock = threading.Lock()
+agent_execution_queue = queue.Queue()
+currently_running_agents = set()  # Track which agents are currently running
+
 def load_agents():
     """Load agents from JSON file."""
     print(f"[Agents] Loading agents from: {AGENTS_FILE}")
@@ -1657,7 +1664,48 @@ def format_polymarket_results_for_bucketeer(keyword: str, results: list) -> str:
     return md
 
 def execute_agent(agent: dict):
-    """Execute an agent's query and send results to Bucketeer."""
+    """Execute an agent's query and send results to Bucketeer.
+    
+    Uses a lock to prevent concurrent executions and queues agents if one is already running.
+    """
+    agent_id = agent.get('id')
+    agent_name = agent.get('name')
+    
+    # Check if this agent is already running
+    if agent_id in currently_running_agents:
+        print(f"[Agent] ⚠️ {agent_name} (ID: {agent_id}) is already running, skipping duplicate execution")
+        return
+    
+    # Try to acquire lock, if busy, queue the agent
+    if not agent_execution_lock.acquire(blocking=False):
+        print(f"[Agent] ⏳ Another agent is running, queuing {agent_name} (ID: {agent_id})")
+        agent_execution_queue.put(agent)
+        return
+    
+    try:
+        # Mark agent as running
+        currently_running_agents.add(agent_id)
+        
+        # Execute the agent
+        _execute_agent_internal(agent)
+        
+    finally:
+        # Always release lock and remove from running set
+        currently_running_agents.discard(agent_id)
+        agent_execution_lock.release()
+        
+        # Process next agent in queue if any
+        if not agent_execution_queue.empty():
+            try:
+                next_agent = agent_execution_queue.get_nowait()
+                print(f"[Agent] 🔄 Processing queued agent: {next_agent.get('name')} (ID: {next_agent.get('id')})")
+                # Run in a new thread to avoid blocking
+                threading.Thread(target=execute_agent, args=[next_agent], daemon=True).start()
+            except queue.Empty:
+                pass
+
+def _execute_agent_internal(agent: dict):
+    """Internal function that actually executes the agent logic."""
     agent_id = agent.get('id')
     agent_name = agent.get('name')
     source_type = agent.get('source_type')
@@ -1906,9 +1954,8 @@ def run_agent_now(agent_id: str):
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
     
-    # Run in background
-    import threading
-    thread = threading.Thread(target=execute_agent, args=[agent])
+    # Run in background - execute_agent handles locking internally
+    thread = threading.Thread(target=execute_agent, args=[agent], daemon=True)
     thread.start()
     
     return {"success": True, "message": f"Agent '{agent['name']}' execution started"}
