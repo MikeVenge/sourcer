@@ -129,7 +129,21 @@ export default function TwitterResults({ data, tabId, updateTabData }) {
       
     } catch (error) {
       console.error('Twitter analysis error:', error)
-      setApiError(error.message)
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      })
+      
+      // Provide more helpful error messages
+      let errorMessage = error.message
+      if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_RESET')) {
+        errorMessage = `Connection error: Unable to reach backend at ${API_URL}. Please check if the backend is running and accessible.`
+      } else if (error.message.includes('Method Not Allowed')) {
+        errorMessage = `Method Not Allowed: The endpoint ${API_URL}/twitter/analyze may not be configured correctly. Please check backend logs.`
+      }
+      
+      setApiError(errorMessage)
     } finally {
       setLoading(false)
       setRefreshing(false)
