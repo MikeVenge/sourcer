@@ -1413,12 +1413,41 @@ def bucketeer_add_content(request: BucketeerRequest):
         print(f"[Bucketeer] Base URL: {BUCKETEER_BASE_URL}")
         print(f"[Bucketeer] Payload preview: {request.content[:200]}...")
         
-        response = requests.post(
-            endpoint_url,
-            json=payload,
-            headers=headers,
-            timeout=30.0
-        )
+        # Retry logic with exponential backoff for timeout/connection errors
+        max_retries = 3
+        retry_delay = 2  # seconds
+        response = None
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                print(f"[Bucketeer] Attempt {attempt + 1}/{max_retries}...")
+                response = requests.post(
+                    endpoint_url,
+                    json=payload,
+                    headers=headers,
+                    timeout=120.0  # Increased timeout to 120 seconds
+                )
+                break  # Success, exit retry loop
+            except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectTimeout, requests.exceptions.ConnectionError) as timeout_error:
+                last_error = timeout_error
+                if attempt < max_retries - 1:
+                    wait_time = retry_delay * (2 ** attempt)  # Exponential backoff: 2s, 4s, 8s
+                    print(f"[Bucketeer] ⚠️ Timeout/Connection error (attempt {attempt + 1}/{max_retries}): {str(timeout_error)}")
+                    print(f"[Bucketeer] Retrying in {wait_time} seconds...")
+                    time.sleep(wait_time)
+                else:
+                    print(f"[Bucketeer] ❌ All retry attempts failed")
+                    raise HTTPException(
+                        status_code=504,
+                        detail=f"Bucketeer API timeout after {max_retries} attempts: {str(timeout_error)}"
+                    )
+        
+        if response is None:
+            raise HTTPException(
+                status_code=504,
+                detail=f"Bucketeer API timeout: {str(last_error) if last_error else 'Unknown error'}"
+            )
         
         print(f"[Bucketeer] Response status: {response.status_code}")
         print(f"[Bucketeer] Response headers: {dict(response.headers)}")
