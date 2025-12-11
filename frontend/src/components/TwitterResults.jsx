@@ -69,8 +69,12 @@ export default function TwitterResults({ data, tabId, updateTabData }) {
     setApiError(null)
     setProcessingStatus('Connecting to API...')
     
+    const requestUrl = `${API_URL}/twitter/analyze`
+    console.log('[Twitter] Making request to:', requestUrl)
+    console.log('[Twitter] API_URL:', API_URL)
+    
     try {
-      const response = await fetch(`${API_URL}/twitter/analyze`, {
+      const response = await fetch(requestUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,8 +88,13 @@ export default function TwitterResults({ data, tabId, updateTabData }) {
         })
       })
       
+      console.log('[Twitter] Response status:', response.status, response.statusText)
+      console.log('[Twitter] Response headers:', Object.fromEntries(response.headers.entries()))
+      
       if (!response.ok) {
-        throw new Error(`API error: ${response.status} ${response.statusText}`)
+        const errorText = await response.text().catch(() => 'Unable to read error response')
+        console.error('[Twitter] Error response:', errorText)
+        throw new Error(`API error: ${response.status} ${response.statusText}. ${errorText.substring(0, 200)}`)
       }
       
       const result = await response.json()
