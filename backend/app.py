@@ -65,8 +65,13 @@ def root():
 
 @app.get("/health")
 def health():
-    """Health check endpoint"""
-    return {"status": "healthy"}
+    """Health check endpoint for Railway and monitoring"""
+    return {
+        "status": "healthy",
+        "service": "sourcer-api",
+        "version": "1.0.0",
+        "timestamp": datetime.now().isoformat()
+    }
 
 
 # ============================================================================
