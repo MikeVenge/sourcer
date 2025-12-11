@@ -1381,9 +1381,13 @@ def bucketeer_add_content(request: BucketeerRequest):
             "Content-Type": "application/json"
         }
         
-        # Bucketeer API expects just the content field - ensure it's a string
+        # Bucketeer API expects content and published_on fields
+        # Get current date/time in ISO format (e.g., "2025-12-07T10:30:00")
+        published_on = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        
         payload = {
-            "content": str(cleaned_content)
+            "content": str(cleaned_content),
+            "published_on": published_on
         }
         
         # Validate payload can be serialized to JSON
@@ -1473,7 +1477,8 @@ from apscheduler.triggers.cron import CronTrigger
 import pytz
 
 AGENTS_FILE = "agents.json"
-scheduler = BackgroundScheduler(timezone=pytz.timezone('America/Los_Angeles'))  # Adjust timezone as needed
+# Scheduler timezone: Asia/Bangkok (Thailand Time, UTC+7)
+scheduler = BackgroundScheduler(timezone=pytz.timezone('Asia/Bangkok'))
 scheduler.start()
 
 def load_agents():
@@ -1499,7 +1504,8 @@ def save_agents(agents):
 
 def calculate_next_run(schedule_type: str, schedule_time: str, last_run: Optional[str] = None):
     """Calculate next run time based on schedule."""
-    now = datetime.now(pytz.timezone('America/Los_Angeles'))
+    # Using Asia/Bangkok timezone (Thailand Time, UTC+7)
+    now = datetime.now(pytz.timezone('Asia/Bangkok'))
     
     if schedule_type == "daily":
         # schedule_time format: "HH:MM"
@@ -1645,8 +1651,11 @@ def execute_agent(agent: dict):
             keyword = query_params.get('keyword', '')
             results = search_markets(keyword)
             
+            # Extract events list from results dictionary
+            events = results.get('events', []) if isinstance(results, dict) else results
+            
             # Format for Bucketeer
-            results_content = format_polymarket_results_for_bucketeer(keyword, results)
+            results_content = format_polymarket_results_for_bucketeer(keyword, events)
             source_type_name = "polymarket"
         
         else:
