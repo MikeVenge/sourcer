@@ -113,7 +113,17 @@ export default function AgentList({ onRunAgent }) {
     if (!nextRun) return 'Not scheduled'
     try {
       const date = new Date(nextRun)
-      return date.toLocaleString()
+      // Format in Asia/Bangkok timezone (UTC+7)
+      return date.toLocaleString('en-US', {
+        timeZone: 'Asia/Bangkok',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      }) + ' (Bangkok)'
     } catch {
       return nextRun
     }
@@ -121,7 +131,7 @@ export default function AgentList({ onRunAgent }) {
 
   const formatSchedule = (agent) => {
     if (agent.schedule === 'daily') {
-      return `Daily at ${agent.schedule_time}`
+      return `Daily at ${agent.schedule_time} (Bangkok, UTC+7)`
     } else {
       const dayIndex = parseInt(agent.schedule_time)
       return `Weekly on ${DAYS_OF_WEEK[dayIndex]}`
@@ -209,7 +219,16 @@ export default function AgentList({ onRunAgent }) {
                     </span>
                     {agent.last_run && (
                       <span>
-                        Last: {new Date(agent.last_run).toLocaleString()}
+                        Last: {new Date(agent.last_run).toLocaleString('en-US', {
+                          timeZone: 'Asia/Bangkok',
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                          hour12: true
+                        })} (Bangkok)
                       </span>
                     )}
                   </div>
