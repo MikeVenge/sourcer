@@ -438,7 +438,7 @@ import os
 # API Keys - Set these as environment variables
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-SEARCHAPI_API_KEY = os.getenv("SEARCHAPI_API_KEY", "uX29PpsVN8nCohWNzmANExdq")
+SEARCHAPI_API_KEY = os.getenv("SEARCHAPI_API_KEY", "AEqiQPXdmzJo1Zdu8o9s1GJQ")
 
 # l2m2 Configuration for AI classification (OpenAI SDK compatible)
 L2M2_BASE_URL = "https://l2m2.adgo-infra.com/api/v4"

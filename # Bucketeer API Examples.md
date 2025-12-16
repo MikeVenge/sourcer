@@ -17,11 +17,7 @@ export API_KEY="bcktr-wxFrNg7Co6MbtvQdtpk39lK0TPALbW5T"
 
 ## Base URL
 
-```
-http://localhost:8000/api/v1/
-```
-
-use this URL as the base URL:  http://bucketeer-production/content/
+use this URL as the base URL:  https://bucketeer.adgo-infra.com/
 
 ## Endpoints
 
