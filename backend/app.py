@@ -794,10 +794,12 @@ def youtube_transcript(request: YouTubeRequest):
     print(f"=" * 60)
     
     try:
-        # Call SearchAPI.io YouTube Transcripts API
+        # Call SearchAPI.io YouTube Transcript API
+        # API Documentation: https://www.searchapi.io/docs/youtube-transcripts
+        # Engine name is "youtube_transcript" (singular), not "youtube_transcripts"
         api_url = "https://www.searchapi.io/api/v1/search"
         params = {
-            "engine": "youtube_transcripts",
+            "engine": "youtube_transcript",  # Fixed: was "youtube_transcripts" (plural)
             "video_id": video_id,
             "api_key": SEARCHAPI_API_KEY,
             "lang": "en"  # Default to English, can be made configurable
@@ -863,9 +865,18 @@ def youtube_transcript(request: YouTubeRequest):
             )
         
         # Extract transcript
-        transcripts = data.get("transcripts", [])
+        # API returns "transcript" (singular) not "transcripts" (plural)
+        transcripts = data.get("transcript", [])
         
         if not transcripts:
+            # Check if there's an error message about available languages
+            available_languages = data.get("available_transcripts_languages", [])
+            if available_languages:
+                lang_list = ", ".join([f"{lang.get('name', lang.get('lang', ''))} ({lang.get('lang', '')})" for lang in available_languages])
+                raise HTTPException(
+                    status_code=404, 
+                    detail=f"No transcript available for this video in the requested language (en). Available languages: {lang_list}"
+                )
             raise HTTPException(status_code=404, detail="No transcript available for this video")
         
         print(f"[YouTube] ✅ Got {len(transcripts)} transcript segments")
