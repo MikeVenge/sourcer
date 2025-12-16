@@ -805,24 +805,46 @@ def youtube_transcript(request: YouTubeRequest):
         print(f"[YouTube] Calling SearchAPI.io...")
         response = requests.get(api_url, params=params, timeout=30)
         
-        if not response.ok:
+        # Try to parse JSON response even if status is not OK
+        try:
+            data = response.json()
+        except ValueError:
+            # If JSON parsing fails, use text response
             error_detail = response.text[:500]
             print(f"[YouTube] SearchAPI.io error: {response.status_code} - {error_detail}")
             raise HTTPException(
                 status_code=500,
-                detail=f"SearchAPI.io error: {error_detail}"
+                detail=f"SearchAPI.io API error: {error_detail}"
             )
         
-        data = response.json()
-        
-        # Check for errors in response
+        # Check for errors in response (even if HTTP status was OK)
         if "error" in data:
             error_msg = data.get("error", "Unknown error")
+            print(f"[YouTube] SearchAPI.io error in response: {error_msg}")
+            
+            # Check for quota/plan errors
+            if "quota" in error_msg.lower() or "upgrade" in error_msg.lower() or "searches for the month" in error_msg.lower():
+                raise HTTPException(
+                    status_code=402,
+                    detail=f"YouTube transcript service quota exceeded. {error_msg}"
+                )
+            
+            # Check for language-related errors
             available_languages = data.get("available_languages", [])
             if available_languages:
                 lang_list = ", ".join([f"{lang['name']} ({lang['lang']})" for lang in available_languages])
                 error_msg += f" Available languages: {lang_list}"
+            
             raise HTTPException(status_code=400, detail=error_msg)
+        
+        # Check HTTP status after parsing JSON
+        if not response.ok:
+            error_detail = response.text[:500]
+            print(f"[YouTube] SearchAPI.io HTTP error: {response.status_code} - {error_detail}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"SearchAPI.io API error (HTTP {response.status_code}): {error_detail}"
+            )
         
         # Extract transcript
         transcripts = data.get("transcripts", [])
