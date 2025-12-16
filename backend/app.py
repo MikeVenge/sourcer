@@ -806,9 +806,9 @@ def youtube_transcript(request: YouTubeRequest):
         print(f"[YouTube] Video ID: {video_id}")
         print(f"[YouTube] API URL: {api_url}")
         try:
-            response = requests.get(api_url, params=params, timeout=45)
+            response = requests.get(api_url, params=params, timeout=120)
         except requests.exceptions.Timeout:
-            print(f"[YouTube] SearchAPI.io request timed out after 45 seconds")
+            print(f"[YouTube] SearchAPI.io request timed out after 120 seconds")
             raise HTTPException(
                 status_code=504,
                 detail="YouTube transcript service timed out. The service may be experiencing high load or quota issues. Please try again later."
