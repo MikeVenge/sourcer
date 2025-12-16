@@ -15,43 +15,58 @@ export default function BucketeerExport({ content, sourceName, sourceType, conte
     setShowModal(true)
 
     try {
-      // For YouTube videos, fetch transcript if content is empty
+      // For YouTube videos, use the content if provided, otherwise fetch transcript
       let contentToSend = content
-      if (contentType === 'youtube' && (!content || content.trim() === '') && url) {
-        try {
-          const transcriptResponse = await fetch(`${API_URL}/youtube/transcript`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url })
-          })
-          
-          if (!transcriptResponse.ok) {
-            throw new Error('Failed to fetch YouTube transcript')
+      if (contentType === 'youtube') {
+        if (content && content.trim() !== '') {
+          // Content is already provided (from YouTubeResults), use it directly
+          contentToSend = content
+        } else if (url) {
+          // Content is empty, fetch transcript
+          try {
+            const transcriptResponse = await fetch(`${API_URL}/youtube/transcript`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url })
+            })
+            
+            if (!transcriptResponse.ok) {
+              throw new Error('Failed to fetch YouTube transcript')
+            }
+            
+            const transcriptData = await transcriptResponse.json()
+            // Properly serialize transcript array to text
+            let transcriptText = ''
+            if (transcriptData.transcript && Array.isArray(transcriptData.transcript)) {
+              // Extract text from each segment and join with newlines for readability
+              transcriptText = transcriptData.transcript
+                .map(segment => segment.text || '')
+                .filter(text => text.trim())
+                .join('\n\n')
+            } else if (typeof transcriptData.transcript === 'string') {
+              transcriptText = transcriptData.transcript
+            }
+            contentToSend = transcriptText || `YouTube URL: ${url}`
+          } catch (transcriptError) {
+            console.error('Error fetching transcript:', transcriptError)
+            // Fallback to just URL if transcript fails
+            contentToSend = `YouTube URL: ${url}`
           }
-          
-          const transcriptData = await transcriptResponse.json()
-          // Properly serialize transcript array to text
-          let transcriptText = ''
-          if (transcriptData.transcript && Array.isArray(transcriptData.transcript)) {
-            // Extract text from each segment and join with spaces
-            transcriptText = transcriptData.transcript
-              .map(segment => segment.text || '')
-              .filter(text => text.trim())
-              .join(' ')
-          } else if (typeof transcriptData.transcript === 'string') {
-            transcriptText = transcriptData.transcript
-          }
-          // Combine URL and transcript for context
-          contentToSend = `YouTube URL: ${url}\n\nTranscript:\n${transcriptText}`
-        } catch (transcriptError) {
-          console.error('Error fetching transcript:', transcriptError)
-          // Fallback to just URL if transcript fails
-          contentToSend = `YouTube URL: ${url}`
         }
       }
 
       // Prepare content with source information
-      const contentWithMetadata = `Source: ${sourceName || 'Unknown'}\nType: ${sourceType || contentType}\n${url ? `URL: ${url}\n\n` : ''}${contentToSend || ''}`
+      // For YouTube, include URL in metadata but put full transcript in content
+      // Ensure content is not empty
+      if (!contentToSend || contentToSend.trim() === '') {
+        throw new Error('No content to export. Please ensure the transcript has been loaded.')
+      }
+      
+      const contentWithMetadata = `Source: ${sourceName || 'Unknown'}\nType: ${sourceType || contentType}\n${url ? `URL: ${url}\n\n` : ''}${contentToSend}`
+      
+      // Log content length for debugging
+      console.log(`[BucketeerExport] Content length: ${contentWithMetadata.length} chars`)
+      console.log(`[BucketeerExport] Content preview: ${contentWithMetadata.substring(0, 200)}...`)
 
       const response = await fetch(`${API_URL}/bucketeer/add-content`, {
         method: 'POST',
