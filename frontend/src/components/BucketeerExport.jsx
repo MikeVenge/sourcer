@@ -17,12 +17,20 @@ export default function BucketeerExport({ content, sourceName, sourceType, conte
     try {
       // For YouTube videos, use the content if provided, otherwise fetch transcript
       let contentToSend = content
+      
+      // Debug logging
+      console.log(`[BucketeerExport] contentType: ${contentType}`)
+      console.log(`[BucketeerExport] content provided: ${content ? `Yes (${content.length} chars)` : 'No'}`)
+      console.log(`[BucketeerExport] content preview: ${content ? content.substring(0, 100) : 'N/A'}...`)
+      
       if (contentType === 'youtube') {
         if (content && content.trim() !== '') {
           // Content is already provided (from YouTubeResults), use it directly
+          console.log(`[BucketeerExport] Using provided content (${content.length} chars)`)
           contentToSend = content
         } else if (url) {
           // Content is empty, fetch transcript
+          console.log(`[BucketeerExport] Content empty, fetching transcript from API...`)
           try {
             const transcriptResponse = await fetch(`${API_URL}/youtube/transcript`, {
               method: 'POST',
@@ -43,30 +51,38 @@ export default function BucketeerExport({ content, sourceName, sourceType, conte
                 .map(segment => segment.text || '')
                 .filter(text => text.trim())
                 .join('\n\n')
+              console.log(`[BucketeerExport] Fetched transcript: ${transcriptText.length} chars from ${transcriptData.transcript.length} segments`)
             } else if (typeof transcriptData.transcript === 'string') {
               transcriptText = transcriptData.transcript
             }
-            contentToSend = transcriptText || `YouTube URL: ${url}`
+            
+            if (!transcriptText || transcriptText.trim() === '') {
+              throw new Error('Transcript is empty')
+            }
+            
+            contentToSend = transcriptText
           } catch (transcriptError) {
-            console.error('Error fetching transcript:', transcriptError)
-            // Fallback to just URL if transcript fails
-            contentToSend = `YouTube URL: ${url}`
+            console.error('[BucketeerExport] Error fetching transcript:', transcriptError)
+            throw new Error(`Failed to get transcript: ${transcriptError.message}. Please ensure the transcript has loaded before exporting.`)
           }
+        } else {
+          throw new Error('No URL provided for YouTube content')
         }
       }
 
-      // Prepare content with source information
-      // For YouTube, include URL in metadata but put full transcript in content
       // Ensure content is not empty
       if (!contentToSend || contentToSend.trim() === '') {
         throw new Error('No content to export. Please ensure the transcript has been loaded.')
       }
       
+      // Prepare content with source information
+      // Put metadata at the top, then full transcript content
       const contentWithMetadata = `Source: ${sourceName || 'Unknown'}\nType: ${sourceType || contentType}\n${url ? `URL: ${url}\n\n` : ''}${contentToSend}`
       
       // Log content length for debugging
-      console.log(`[BucketeerExport] Content length: ${contentWithMetadata.length} chars`)
-      console.log(`[BucketeerExport] Content preview: ${contentWithMetadata.substring(0, 200)}...`)
+      console.log(`[BucketeerExport] Final content length: ${contentWithMetadata.length} chars`)
+      console.log(`[BucketeerExport] Content preview (first 300 chars): ${contentWithMetadata.substring(0, 300)}...`)
+      console.log(`[BucketeerExport] Content preview (last 200 chars): ...${contentWithMetadata.substring(Math.max(0, contentWithMetadata.length - 200))}`)
 
       const response = await fetch(`${API_URL}/bucketeer/add-content`, {
         method: 'POST',

@@ -1470,7 +1470,9 @@ def bucketeer_add_content(request: BucketeerRequest):
         
         print(f"[Bucketeer] Endpoint: {endpoint_url}")
         print(f"[Bucketeer] Base URL: {BUCKETEER_BASE_URL}")
-        print(f"[Bucketeer] Payload preview: {request.content[:200]}...")
+        print(f"[Bucketeer] Content length: {len(request.content)} chars")
+        print(f"[Bucketeer] Payload preview (first 500 chars): {request.content[:500]}...")
+        print(f"[Bucketeer] Payload preview (last 200 chars): ...{request.content[-200:]}")
         
         # Retry logic with exponential backoff for timeout/connection errors
         max_retries = 3
