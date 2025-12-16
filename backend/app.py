@@ -794,12 +794,12 @@ def youtube_transcript(request: YouTubeRequest):
     print(f"=" * 60)
     
     try:
-        # Call SearchAPI.io YouTube Transcript API
+        # Call SearchAPI.io YouTube Transcripts API
         # API Documentation: https://www.searchapi.io/docs/youtube-transcripts
-        # Engine name is "youtube_transcript" (singular), not "youtube_transcripts"
+        # Engine name is "youtube_transcripts" (plural)
         api_url = "https://www.searchapi.io/api/v1/search"
         params = {
-            "engine": "youtube_transcript",  # Fixed: was "youtube_transcripts" (plural)
+            "engine": "youtube_transcripts",  # Correct: plural form
             "video_id": video_id,
             "api_key": SEARCHAPI_API_KEY,
             "lang": "en"  # Default to English, can be made configurable
@@ -865,8 +865,8 @@ def youtube_transcript(request: YouTubeRequest):
             )
         
         # Extract transcript
-        # API returns "transcript" (singular) not "transcripts" (plural)
-        transcripts = data.get("transcript", [])
+        # API returns "transcripts" (plural) array
+        transcripts = data.get("transcripts", [])
         
         if not transcripts:
             # Check if there's an error message about available languages
