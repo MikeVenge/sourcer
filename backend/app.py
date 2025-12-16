@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
+from datetime import datetime
 import asyncio
 import time
 import sys
@@ -36,9 +37,16 @@ app = FastAPI(
 )
 
 # CORS middleware
+# Note: When allow_credentials=True, you cannot use allow_origins=["*"]
+# Must explicitly list origins or set allow_credentials=False
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://sourcer-six.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:8000",
+    ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
