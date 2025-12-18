@@ -125,16 +125,16 @@ export default function NotebookLMExport({ content, sourceName, sourceType, cont
         content_length: contentToSend?.length || 0,
         content_preview: contentToSend?.substring(0, 200) || '(empty)',
         source_type: sourceType,
-        content_type: contentType === 'youtube' ? 'text' : contentType,
+        content_type: contentType, // Keep original content_type (youtube, text, web)
         url: url,
         notebook_ids: showNotebookSelection ? selectedNotebooks : undefined
       })
 
       const requestBody = {
         source_name: sourceName,
-        content: contentToSend,
+        content: contentToSend, // Still send content for classification, but backend will use URL for YouTube
         source_type: sourceType,
-        content_type: contentType === 'youtube' ? 'text' : contentType,
+        content_type: contentType, // Keep original content_type so backend knows to use webContent for YouTube
         url: url,
         notebook_ids: showNotebookSelection ? selectedNotebooks : undefined
       }
