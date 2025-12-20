@@ -9,7 +9,8 @@ export default function TwitterInput({ onSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!handles.trim() || !topic.trim()) return
+    // Allow search if either handles OR topic is provided
+    if (!handles.trim() && !topic.trim()) return
     
     const handleList = handles
       .split(/[\n,\s]+/)  // Split on newlines, commas, OR whitespace
@@ -27,7 +28,7 @@ export default function TwitterInput({ onSubmit }) {
         </div>
         <div>
           <h2>Twitter Analysis</h2>
-          <p>Enter Twitter handles and a topic to analyze</p>
+          <p>Enter Twitter handles and/or a topic to analyze</p>
         </div>
       </div>
 
